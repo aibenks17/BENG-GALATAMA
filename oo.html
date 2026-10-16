@@ -1,0 +1,1977 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GALATAMA SISTEM - NEXUS EDITION</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #020408;
+      --panel-opacity: 0.88;
+      --card-opacity: 0.82;
+      --panel-bg: rgba(6, 10, 20, var(--panel-opacity));
+      --card-bg: rgba(12, 18, 32, var(--card-opacity));
+      --lime: #00ffb2;
+      --cyan: #00e5ff;
+      --gold: #ffc107;
+      --pink: #ff0055;
+      --purple: #8a2be2;
+      --border-lime: rgba(0, 255, 178, 0.3);
+      --text-main: #f0f4f8;
+      --text-muted: rgba(240, 244, 248, 0.6);
+      --custom-text-color: #ffffff; /* Variable custom warna text */
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-main: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); font-size: 11px; }
+    
+    body {
+      background-color: var(--bg-dark);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: var(--text-main);
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+      padding: 8px;
+      gap: 8px;
+    }
+
+    .hidden { display: none !important; }
+
+    header {
+      height: 58px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border-lime);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      flex-shrink: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.8), inset 0 0 15px rgba(0,255,178,0.08);
+      clip-path: polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+    }
+    
+    .brand-container { display: flex; flex-direction: column; justify-content: center; padding-left: 10px; }
+    .brand { font-size: 13px; font-weight: 900; letter-spacing: 2px; color: #fff; text-transform: uppercase; }
+    .brand span { color: var(--lime); text-shadow: 0 0 12px var(--lime); }
+    .client-license { font-size: 8.5px; font-weight: 800; color: var(--gold); letter-spacing: 1px; margin-top: 1px; }
+
+    .timer-box {
+      display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.8);
+      border: 1.5px solid var(--lime); padding: 3px 14px; border-radius: 8px;
+      box-shadow: 0 0 18px rgba(0,255,178,0.25);
+      clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px);
+    }
+    .timer-digits { font-size: 28px; font-weight: 900; color: var(--lime); font-family: var(--font-mono); min-width: 90px; text-align: center; letter-spacing: 1px; text-shadow: 0 0 15px var(--lime); }
+
+    .btn {
+      padding: 5px 12px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer;
+      transition: all 0.2s ease; font-size: 9px; display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+    }
+    .btn:active { transform: scale(0.94); }
+    .btn-lime { background: var(--lime); color: #000; box-shadow: 0 0 10px rgba(0,255,178,0.3); }
+    .btn-purple { background: var(--purple); color: #fff; box-shadow: 0 0 10px rgba(138,43,226,0.3); }
+    .btn-gold { background: var(--gold); color: #000; box-shadow: 0 0 10px rgba(255,193,7,0.3); }
+    .btn-pink { background: var(--pink); color: #fff; box-shadow: 0 0 10px rgba(255,0,85,0.3); }
+    .btn-dark { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid var(--border-lime); }
+    .btn-dark:hover { color: var(--lime); border-color: var(--lime); background: rgba(0,255,178,0.15); }
+    .btn-sm { padding: 4px 8px; font-size: 8.5px; }
+
+    .main-layout { display: grid; grid-template-columns: 320px 1fr; flex: 1; overflow: hidden; gap: 8px; }
+
+    aside {
+      background: var(--panel-bg); border: 1px solid var(--border-lime);
+      border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; backdrop-filter: blur(16px);
+    }
+    
+    .card {
+      background: var(--card-bg); border: 1px solid rgba(0,255,178,0.25); border-radius: 8px; padding: 10px; backdrop-filter: blur(12px);
+      box-shadow: inset 0 0 12px rgba(255,255,255,0.02); position: relative;
+    }
+    .card-title {
+      font-size: 9px; font-weight: 900; text-transform: uppercase; color: var(--lime);
+      margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px dashed var(--border-lime); padding-bottom: 4px; letter-spacing: 0.5px;
+    }
+
+    .mode-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; background: rgba(0,0,0,0.6); padding: 4px; border-radius: 6px; }
+    .mode-tab {
+      background: transparent; border: none; border-radius: 4px; padding: 6px; text-align: center;
+      cursor: pointer; font-weight: 800; color: var(--text-muted); font-size: 8.5px; transition: 0.2s;
+    }
+    .mode-tab.active { background: rgba(0,255,178,0.2); color: #fff; border: 1px solid var(--lime); text-shadow: 0 0 8px var(--lime); }
+
+    .input-field {
+      background: rgba(0,0,0,0.7); border: 1px solid var(--border-lime); border-radius: 4px;
+      padding: 6px 8px; color: #fff; font-weight: 600; outline: none; width: 100%; font-size: 9px;
+    }
+    .input-field:focus { border-color: var(--lime); box-shadow: 0 0 8px rgba(0,255,178,0.3); }
+    select.input-field { background-color: #060912 !important; color: #fff !important; }
+
+    main { padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: transparent; height: 100%; position: relative; }
+
+    #giantTimerOverlay {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--font-mono); font-size: 240px; font-weight: 900; color: var(--pink);
+      text-shadow: 0 0 50px var(--pink), 0 0 100px rgba(255,0,85,0.8); z-index: 50; pointer-events: none;
+      animation: pulseGiant 0.4s infinite alternate;
+    }
+    @keyframes pulseGiant {
+      from { transform: translate(-50%, -50%) scale(1); opacity: 0.85; }
+      to { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+    }
+
+    #flagBannerOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(12px);
+      z-index: 9999; display: flex; align-items: center; justify-content: center;
+      pointer-events: none; overflow: hidden; perspective: 1200px;
+    }
+
+    .flag-cloth {
+      width: 580px; height: 320px; background-size: cover; background-position: center;
+      border: 3px solid rgba(0,255,178,0.8); border-radius: 18px;
+      box-shadow: 0 0 50px rgba(0,255,178,0.5), 0 20px 80px rgba(0,0,0,0.95);
+      position: relative; overflow: hidden; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; padding: 20px;
+    }
+
+    .flag-content {
+      position: relative; z-index: 2; background: rgba(4, 7, 14, 0.8); padding: 22px 45px;
+      border-radius: 14px; border: 1.5px solid var(--lime); backdrop-filter: blur(10px);
+      box-shadow: 0 0 35px rgba(0,255,178,0.4);
+    }
+
+    .flag-client-title {
+      font-size: 32px; font-weight: 900; color: var(--gold); text-transform: uppercase;
+      letter-spacing: 3px; text-shadow: 0 0 20px var(--gold), 0 0 30px #000;
+    }
+    .flag-sub-text {
+      font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 4px; margin-top: 6px;
+      text-shadow: 0 0 12px var(--lime);
+    }
+
+    .anim-DEMON_RAGE { animation: demonRage 1.2s ease-in-out infinite alternate; }
+    @keyframes demonRage {
+      0% { transform: translateY(-20px) scale(0.96) rotate(-2deg); box-shadow: 0 0 30px #ff0055; }
+      100% { transform: translateY(20px) scale(1.04) rotate(2deg); box-shadow: 0 0 80px #8a2be2, 0 0 40px #00ffb2; }
+    }
+
+    .anim-CINEMATIC_ORBIT { animation: cinematicOrbit 1.8s ease-in-out infinite alternate; }
+    @keyframes cinematicOrbit {
+      0% { transform: rotateY(-18deg) rotateX(10deg) translateY(-15px) scale(0.98); }
+      100% { transform: rotateY(18deg) rotateX(-10deg) translateY(15px) scale(1.02); }
+    }
+
+    .anim-NEON_AURA { animation: neonAura 1.4s ease-in-out infinite alternate; }
+    @keyframes neonAura {
+      0% { transform: translateY(-10px) scale(0.95); filter: drop-shadow(0 0 15px var(--lime)); }
+      100% { transform: translateY(10px) scale(1.05); filter: drop-shadow(0 0 50px var(--purple)) drop-shadow(0 0 25px var(--gold)); }
+    }
+
+    .anim-SILK_WAVE { animation: silkWave 1.3s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate; }
+    @keyframes silkWave {
+      0% { transform: rotateY(-22deg) skewY(-4deg) translateY(-8px); }
+      100% { transform: rotateY(22deg) skewY(4deg) translateY(8px); }
+    }
+
+    .anim-SMOOTH_ELASTIC { animation: smoothElastic 1.1s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite alternate; }
+    @keyframes smoothElastic {
+      0% { transform: translateY(-25px) scaleY(1.05) scaleX(0.95); }
+      100% { transform: translateY(20px) scaleY(0.95) scaleX(1.05); }
+    }
+
+    .anim-HOLO_DIMENSION { animation: holoDim 1.5s ease-in-out infinite alternate; }
+    @keyframes holoDim {
+      0% { transform: rotateX(25deg) translateY(-12px) scale(0.96); opacity: 0.85; }
+      100% { transform: rotateX(-25deg) translateY(12px) scale(1.04); opacity: 1; }
+    }
+
+    .anim-INFINITY_LOOP { animation: infinityLoop 2.4s ease-in-out infinite alternate; }
+    @keyframes infinityLoop {
+      0% { transform: translate(-15px, -15px) rotate(-3deg); }
+      50% { transform: translate(15px, 15px) rotate(3deg); }
+      100% { transform: translate(-15px, 15px) rotate(-2deg); }
+    }
+
+    .anim-CODESHIFT_TILT { animation: codeshiftTilt 1.2s cubic-bezier(0.37, 0, 0.63, 1) infinite alternate; }
+    @keyframes codeshiftTilt {
+      0% { transform: rotate3d(1, 1, 0, 15deg) translateY(-15px); }
+      100% { transform: rotate3d(1, 1, 0, -15deg) translateY(15px); }
+    }
+
+    .anim-ROYAL_GOLD { animation: royalGold 1.6s ease-in-out infinite alternate; }
+    @keyframes royalGold {
+      0% { transform: translateY(-16px) scale(0.97) rotateY(-10deg); box-shadow: 0 0 20px var(--gold); }
+      100% { transform: translateY(16px) scale(1.03) rotateY(10deg); box-shadow: 0 0 70px var(--gold), 0 0 30px var(--lime); }
+    }
+
+    .anim-COSMIC_ZEROG { animation: cosmicZeroG 2s ease-in-out infinite alternate; }
+    @keyframes cosmicZeroG {
+      0% { transform: translateY(-22px) rotate(-4deg) scale(0.98); }
+      50% { transform: translateY(0px) rotate(2deg) scale(1.02); }
+      100% { transform: translateY(22px) rotate(-2deg) scale(0.99); }
+    }
+
+    @keyframes waveShade { 0% { transform: translateX(0%); } 100% { transform: translateX(-50%); } }
+
+    .player-grid-container {
+      display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(4, 1fr);
+      gap: 10px; flex: 1; height: 100%; overflow: hidden; padding-right: 2px;
+    }
+    
+    .player-card-box {
+      background: var(--card-bg); border: 1px solid var(--border-lime);
+      padding: 8px 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: all 0.2s ease; position: relative; height: 100%; backdrop-filter: blur(10px);
+      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .player-card-box:hover { border-color: var(--lime); transform: translateY(-3px); filter: drop-shadow(0 0 8px rgba(0,255,178,0.4)); }
+    .player-card-box.selected { border-color: var(--lime); background: rgba(0, 255, 178, 0.22); filter: drop-shadow(0 0 12px rgba(0,255,178,0.6)); }
+    
+    .player-card-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 2px solid var(--purple); box-shadow: 0 0 10px rgba(138,43,226,0.5); }
+    
+    /* 🛡️ KARTU NAMA DAN SKOR DENGAN CUSTOM COLOR + OUTLINE HITAM KEBAL BG */
+    .player-card-name { 
+      font-weight: 900; font-size: 10px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 115px; 
+      color: var(--custom-text-color);
+      text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 0 0 6px rgba(0,0,0,0.9);
+    }
+    .player-card-score { 
+      font-family: var(--font-mono); font-size: 13.5px; font-weight: 900; 
+      color: var(--custom-text-color);
+      text-shadow: 2px 2px 0px #000, -2px -2px 0px #000, 2px -2px 0px #000, -2px 2px 0px #000, 0 0 8px rgba(0,0,0,0.9);
+    }
+    
+    .status-tag { padding: 2px 4px; border-radius: 3px; font-weight: 800; font-size: 7.5px; text-transform: uppercase; }
+    .tag-active { background: rgba(0, 255, 178, 0.2); color: var(--lime); border: 1px solid var(--lime); }
+    .tag-elim { background: rgba(255, 0, 85, 0.2); color: var(--pink); border: 1px solid var(--pink); }
+    .tag-present { background: rgba(0, 255, 178, 0.2); color: var(--lime); border: 1px solid var(--lime); cursor: pointer; }
+    .tag-absent { background: rgba(255, 0, 85, 0.2); color: var(--pink); border: 1px solid var(--pink); cursor: pointer; }
+    
+    .pay-checkbox-wrapper {
+      display: inline-flex; align-items: center; gap: 3px; background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-lime); border-radius: 3px; padding: 2px 5px; cursor: pointer;
+      font-size: 7.5px; font-weight: 800; color: #fff;
+    }
+    .pay-checkbox-wrapper input[type="checkbox"] { cursor: pointer; accent-color: var(--gold); width: 10px; height: 10px; }
+    .pay-checkbox-wrapper.checked { background: rgba(255, 193, 7, 0.2); border-color: var(--gold); color: var(--gold); }
+
+    .dropdown-container { display: flex; flex-direction: column; gap: 6px; }
+    .dropdown-box { background: rgba(0,0,0,0.6); border: 1px solid var(--border-lime); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+    .dropdown-box label { font-size: 8px; font-weight: 900; color: var(--lime); text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .spinwheel-box { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.6); border: 1px solid var(--purple); padding: 8px; border-radius: 6px; margin-bottom: 6px; }
+    .spinwheel-display { font-size: 11px; font-weight: 900; color: var(--gold); }
+    .spinwheel-display.animating { animation: flashText 0.1s infinite alternate; }
+    @keyframes flashText { from { opacity: 0.3; } to { opacity: 1; } }
+
+    .location-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; max-height: 115px; overflow-y: auto; padding-right: 2px; }
+    .loc-btn {
+      padding: 6px 4px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-lime); border-radius: 4px;
+      text-align: center; font-weight: 700; cursor: pointer; color: #fff; font-size: 8px; transition: 0.15s;
+    }
+    .loc-btn.active { background: rgba(0, 255, 178, 0.25); border-color: var(--lime); color: #fff; box-shadow: 0 0 10px rgba(0,255,178,0.3); }
+
+    .round-chips { display: flex; gap: 4px; margin: 6px 0; }
+    .chip { flex: 1; padding: 5px; text-align: center; background: rgba(0,0,0,0.5); border: 1px solid var(--border-lime); border-radius: 4px; font-weight: 800; color: #fff; font-size: 8px; }
+    .chip.active { background: var(--purple); color: #fff; border-color: var(--lime); }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(14px); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-card { background: var(--panel-bg); border: 1.5px solid var(--lime); border-radius: 12px; width: 430px; max-width: 90%; padding: 18px; box-shadow: 0 0 35px rgba(0,255,178,0.3); }
+
+    .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+    .file-input-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+
+    #antiInspectOverlay {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #000; color: var(--pink); z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; font-family: var(--font-mono); overflow: hidden;
+    }
+    .binary-bg {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      color: rgba(255, 0, 85, 0.15); font-size: 14px; word-break: break-all;
+      pointer-events: none; z-index: 1; line-height: 1.1; overflow: hidden;
+    }
+    .thief-title {
+      font-size: 52px; font-weight: 900; color: var(--pink); text-shadow: 0 0 30px var(--pink), 0 0 60px var(--pink);
+      z-index: 10; animation: flashAlarm 0.2s infinite alternate; margin-bottom: 12px;
+    }
+    @keyframes flashAlarm { from { opacity: 1; transform: scale(1); } to { opacity: 0.7; transform: scale(1.03); } }
+    .thief-sub { font-size: 18px; color: #fff; font-weight: 800; z-index: 10; letter-spacing: 2px; }
+
+    .slider-box { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,0.5); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border-lime); }
+    .slider-box input[type=range] { flex: 1; cursor: pointer; accent-color: var(--lime); }
+  </style>
+  <!-- ===== ADD-ON: LISENSI + AKSEN WARNA + SETTINGS HORIZONTAL (CSS tambahan, kode asli tidak diubah) ===== -->
+  <style id="addonStyle">
+    :root {
+      --lime: #ffffff; /* warna teks judul/label: default PUTIH (bisa diganti di Settings) */
+      --accent: #00ffb2;
+      --accent-ink: #000;
+      --acc-12: color-mix(in srgb, var(--accent) 12%, transparent);
+      --acc-15: color-mix(in srgb, var(--accent) 15%, transparent);
+      --acc-20: color-mix(in srgb, var(--accent) 20%, transparent);
+      --acc-25: color-mix(in srgb, var(--accent) 25%, transparent);
+      --acc-30: color-mix(in srgb, var(--accent) 30%, transparent);
+      --acc-40: color-mix(in srgb, var(--accent) 40%, transparent);
+      --acc-60: color-mix(in srgb, var(--accent) 60%, transparent);
+      --border-lime: var(--acc-30);
+    }
+    /* AKSEN HANYA UNTUK BORDER / GLOW / LATAR / TOMBOL. WARNA TEKS TIDAK DIUBAH. */
+    header { box-shadow: 0 8px 32px rgba(0,0,0,0.8), inset 0 0 15px var(--acc-12); }
+    .timer-box { border-color: var(--accent); box-shadow: 0 0 18px var(--acc-25); }
+    .card { border-color: var(--acc-25); }
+    .btn-lime { background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 10px var(--acc-30); }
+    .btn-dark:hover { border-color: var(--accent); background: var(--acc-15); }
+    .mode-tab.active { background: var(--acc-20); border-color: var(--accent); }
+    .input-field:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--acc-30); }
+    .flag-content { border-color: var(--accent); box-shadow: 0 0 35px var(--acc-40); }
+    .player-card-box:hover { border-color: var(--accent); filter: drop-shadow(0 0 8px var(--acc-40)); }
+    .player-card-box.selected { border-color: var(--accent); background: var(--acc-20); filter: drop-shadow(0 0 12px var(--acc-60)); }
+    .tag-active, .tag-present { background: var(--acc-20); border-color: var(--accent); }
+    .loc-btn.active { background: var(--acc-25); border-color: var(--accent); box-shadow: 0 0 10px var(--acc-30); }
+    .chip.active { border-color: var(--accent); }
+    .modal-card { border-color: var(--accent); box-shadow: 0 0 35px var(--acc-30); }
+    .slider-box input[type=range] { accent-color: var(--accent); }
+
+    /* Settings horizontal */
+    #settingsModal .modal-card { width: min(1100px, 96vw); max-width: 96vw; max-height: 92vh; overflow-y: auto; }
+    #settingsModal .settings-cols { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+    #settingsModal .settings-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 10px; border: 1px dashed var(--border-lime); border-radius: 8px; background: rgba(0,0,0,0.25); }
+    #settingsModal .settings-col > label:first-child { margin-top: 0 !important; }
+    @media (max-width: 900px) { #settingsModal .settings-cols { grid-template-columns: 1fr; } }
+
+    /* Selector aksen & warna teks judul */
+    .accent-swatches { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .accent-dot, .label-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.25); cursor: pointer; transition: transform .15s; padding: 0; }
+    .accent-dot:hover, .label-dot:hover { transform: scale(1.15); }
+    .accent-dot.active, .label-dot.active { border-color: #fff; box-shadow: 0 0 10px currentColor; transform: scale(1.15); }
+
+    /* Lisensi & login */
+    #loginOverlay { position: fixed; inset: 0; z-index: 99990; background: radial-gradient(circle at 50% 30%, #0a1424 0%, #020408 70%); display: flex; align-items: center; justify-content: center; }
+    #loginOverlay .login-card { width: 370px; max-width: 92vw; background: var(--panel-bg); border: 1.5px solid var(--accent); border-radius: 12px; padding: 22px; box-shadow: 0 0 40px var(--acc-30); display: flex; flex-direction: column; gap: 10px; }
+    #loginOverlay .login-brand { text-align: center; font-size: 15px; font-weight: 900; letter-spacing: 2px; color: #fff; }
+    #loginOverlay .login-brand span { color: var(--lime); text-shadow: 0 0 12px var(--lime); }
+    #loginOverlay .login-sub { text-align: center; font-size: 9px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 4px; }
+    #loginOverlay label.lbl { font-size: 8px; font-weight: 900; color: var(--lime); text-transform: uppercase; letter-spacing: .5px; }
+    #loginOverlay .pane { display: flex; flex-direction: column; gap: 10px; }
+    #loginError, #activError { color: var(--pink); font-weight: 800; font-size: 9px; min-height: 12px; text-align: center; line-height: 1.4; }
+    .remember-row { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--text-muted); cursor: pointer; }
+    .remember-row input { accent-color: var(--accent); }
+    .link-btn { background: none; border: none; color: var(--text-muted); font-size: 9px; font-weight: 800; cursor: pointer; text-decoration: underline; padding: 2px; }
+    .link-btn:hover { color: #fff; }
+    .devid-box { display: flex; gap: 6px; align-items: center; }
+    .devid-box .devid { flex: 1; font-family: var(--font-mono); font-weight: 900; font-size: 12px; letter-spacing: 1px; color: var(--gold); background: rgba(0,0,0,0.7); border: 1px dashed var(--gold); border-radius: 4px; padding: 7px 8px; text-align: center; user-select: text; }
+    .lic-info { font-size: 9px; color: var(--text-muted); text-align: center; line-height: 1.5; }
+    .lic-info b { color: #fff; }
+    textarea.input-field { resize: vertical; min-height: 70px; font-family: var(--font-mono); font-size: 8px; user-select: text; }
+    .user-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; color: var(--text-muted); padding: 0 6px; white-space: nowrap; }
+    .user-badge b { color: #fff; }
+    .user-badge.warn { color: var(--gold); }
+  </style>
+</head>
+<body>
+
+  <div id="antiInspectOverlay" class="hidden">
+    <div class="binary-bg" id="binaryBgContainer"></div>
+    <div class="thief-title">🚨 TERTANGKAP KAU PENCURI! 🚨</div>
+    <div class="thief-sub">DILARANG MEMBONGKAR KODINGAN GALATAMA ENGINE BY BENG BECKMAN!</div>
+    <div style="font-size:11px; color:var(--gold); margin-top:15px; z-index:10; font-weight:800;">Aplikasi Dikunci. Silakan Muat Ulang Halaman.</div>
+  </div>
+
+  <div id="flagBannerOverlay" class="hidden">
+    <div class="flag-cloth anim-DEMON_RAGE" id="flagClothElement">
+      <div class="flag-content">
+        <div class="flag-client-title" id="flagClientTitle">BENG STORE</div>
+        <div class="flag-sub-text">MATCH STARTED! READY GO! 🚀</div>
+      </div>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand-container">
+      <div class="brand">GALATAMA <span>BY BENG BECKMAN</span></div>
+      <div class="client-license" id="clientLicenseLabel">LICENSED TO: OFFICIAL STORE</div>
+    </div>
+
+    <div class="timer-box">
+      <span style="color:var(--text-muted); font-size:9px; font-weight:800;">TIMER:</span>
+      <div class="timer-digits" id="timerClock">15:00</div>
+      <button class="btn btn-lime btn-sm" onclick="App.startTimer()">START</button>
+      <button class="btn btn-pink btn-sm" onclick="App.pauseTimer()">PAUSE</button>
+      <button class="btn btn-dark btn-sm" onclick="App.resetTimer()">RESET</button>
+      <button class="btn btn-dark btn-sm" onclick="App.setCustomTime()">SET</button>
+    </div>
+
+    <div style="display:flex; gap:6px;">
+      <button class="btn btn-gold btn-sm" onclick="App.announceWinners()">🏆 WINNERS</button>
+      <button class="btn btn-purple btn-sm" onclick="App.openLogModal()">📜 LOG / UNDO</button>
+      <button class="btn btn-dark btn-sm" onclick="App.openSettingsModal()">⚙️ SETTINGS</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <aside>
+      <div class="card">
+        <div class="card-title"><span>MODE PERTANDINGAN</span></div>
+        <div class="mode-grid">
+          <button class="mode-tab" id="m-SURVIVAL" onclick="App.changeMode('SURVIVAL')">SURVIVAL</button>
+          <button class="mode-tab" id="m-MEGALODON" onclick="App.changeMode('MEGALODON')">MEGALODON</button>
+          <button class="mode-tab" id="m-GLACIAL_SERPENT" onclick="App.changeMode('GLACIAL_SERPENT')">GLACIAL</button>
+          <button class="mode-tab" id="m-POINT_RUSH" onclick="App.changeMode('POINT_RUSH')">POINT RUSH</button>
+        </div>
+      </div>
+
+      <div class="card hidden" id="pointRushCard">
+        <div class="card-title"><span>SPINWHEEL POINT RUSH (30 MAPS)</span></div>
+        <div class="spinwheel-box">
+          <div>
+            <div style="color:var(--text-muted); font-size:7.5px;">LOKASI AKTIF:</div>
+            <div class="spinwheel-display" id="spinwheelDisplay">COPPER CANYON</div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="App.spinWheel()">🎰 SPIN</button>
+        </div>
+        <input type="text" id="searchLocation" class="input-field" placeholder="🔍 Cari Tempat / Map..." oninput="App.renderPointRush()" style="margin-bottom:6px;">
+        <div class="location-grid" id="pointRushLocationGrid"></div>
+      </div>
+
+      <div class="card hidden" id="survivalCard">
+        <div class="card-title">
+          <span>SURVIVAL ROUND</span>
+          <span style="color:var(--lime);" id="roundText">1 / 5</span>
+        </div>
+        <div class="round-chips" id="roundChips"></div>
+        <button class="btn btn-purple btn-sm" style="width:100%;" onclick="App.nextRound()">⚡ NEXT ROUND (ELIMINASI)</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>INPUT TANGKAPAN</span>
+          <span id="selectedLabel" style="color:var(--lime); font-size:7.5px;">PILIH KARTU PESERTA</span>
+        </div>
+        <div id="dropdownWrapper" class="dropdown-container"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span>PESERTA</span></div>
+        
+        <div style="display:flex; gap:4px; margin-bottom:6px;">
+          <input type="text" id="quickPesertaName" class="input-field" placeholder="Ketik nama peserta..." onkeydown="if(event.key === 'Enter') App.quickAddPeserta()">
+          <button class="btn btn-lime btn-sm" onclick="App.quickAddPeserta()">+ TAMBAH</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px; margin-bottom:6px;">
+          <button class="btn btn-lime btn-sm" onclick="App.markAllAttendance(true)">✅ ABSEN ALL</button>
+          <button class="btn btn-gold btn-sm" onclick="App.markAllPayment(true)">💰 PAY ALL</button>
+        </div>
+        <button class="btn btn-purple btn-sm" style="width:100%; margin-bottom:6px;" onclick="App.openAddModal()">+ FOTO/DETAIL PESERTA</button>
+
+        <input type="text" id="searchPeserta" class="input-field" placeholder="Cari Peserta..." oninput="App.renderPeserta()" style="margin-bottom:6px;">
+        <div class="tab-filter" style="display:flex; gap:3px;">
+          <div class="chip active" onclick="App.filterPeserta(this, 'ALL')" style="cursor:pointer;">ALL</div>
+          <div class="chip" onclick="App.filterPeserta(this, 'FIXED')" style="cursor:pointer;">FIX</div>
+          <div class="chip" onclick="App.filterPeserta(this, 'RANDOM')" style="cursor:pointer;">RND</div>
+        </div>
+      </div>
+    </aside>
+
+    <main>
+      <div id="giantTimerOverlay" class="hidden">10</div>
+
+      <div class="card" style="flex: 1; display: flex; flex-direction: column; height: 100%;">
+        <div class="card-title" style="flex-shrink: 0;">
+          <span>GRID PESERTA & KLASEMEN (20 PLAYER HORIZONTAL)</span>
+          <div style="display:flex; gap:8px; color:var(--text-muted);">
+            <span>Total: <b id="statTotal" style="color:#fff;">0</b></span>
+            <span>Hadir: <b id="statHadir" style="color:var(--lime);">0</b></span>
+            <span>Aktif: <b id="statAktif" style="color:var(--lime);">0</b></span>
+            <span>Bayar: <b id="statPay" style="color:var(--gold);">0</b></span>
+          </div>
+        </div>
+
+        <div class="player-grid-container" id="playerGridContainer"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay hidden" id="playerModal">
+    <div class="modal-card">
+      <div class="card-title">
+        <span id="modalPlayerName">DETAIL PESERTA</span>
+        <button class="btn btn-pink btn-sm" onclick="App.closeModal('playerModal')">X</button>
+      </div>
+      <div id="modalPlayerStats" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="logModal">
+    <div class="modal-card" style="width:520px;">
+      <div class="card-title">
+        <span>RIWAYAT LOG & UNDO</span>
+        <button class="btn btn-pink btn-sm" onclick="App.closeModal('logModal')">X</button>
+      </div>
+      <div style="max-height:280px; overflow-y:auto; margin-top:8px;">
+        <table style="width:100%; border-collapse:collapse;">
+          <thead><tr style="text-align:left; color:var(--text-muted);"><th>Waktu</th><th>Peserta</th><th>Detail</th><th>Hasil</th><th>Poin</th><th style="text-align:center;">Undo</th></tr></thead>
+          <tbody id="historyTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU SETTINGS DENGAN CUSTOM WARNA TEKS -->
+  <div class="modal-overlay hidden" id="settingsModal">
+    <div class="modal-card">
+      <div class="card-title">
+        <span>PENGATURAN ENGINE & SEWA STORE</span>
+        <button class="btn btn-pink btn-sm" onclick="App.closeModal('settingsModal')">X</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <label style="color:var(--lime); font-weight:800;">🏷️ IDENTITAS PENYEWA / STORE:</label>
+        <input type="text" id="clientLicenseInput" class="input-field" placeholder="Nama Rental / Store Klien...">
+        
+        <label style="color:var(--lime); font-weight:800; margin-top:2px;">🖼️ CUSTOM BACKGROUND STORE:</label>
+        <div class="file-input-wrapper">
+          <button class="btn btn-dark btn-sm" id="btnBgFileLabel" style="width:100%;">📁 UPLOAD GAMBAR BACKGROUND</button>
+          <input type="file" id="customBgFileInput" accept="image/*" onchange="App.handleBgFileSelect(event)">
+        </div>
+        <input type="text" id="customBgUrlInput" class="input-field" placeholder="Atau Tempel URL Gambar Background...">
+
+        <!-- 🛠️ FITUR CUSTOM WARNA TEKS KARTU PESERTA -->
+        <label style="color:var(--lime); font-weight:800; margin-top:4px;">✏️ CUSTOM WARNA TEKS (NAMA & SKOR PESERTA):</label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <input type="color" id="customTextColorPicker" class="input-field" style="width:50px; height:32px; padding:2px; cursor:pointer;" value="#ffffff" onchange="App.updateCustomTextColor(this.value)">
+          <input type="text" id="customTextColorHex" class="input-field" style="flex:1;" value="#ffffff" placeholder="#FFFFFF" oninput="App.updateCustomTextColor(this.value)">
+        </div>
+
+        <label style="color:var(--gold); font-weight:800; margin-top:4px;">🏁 DURASI TAMPIL BENDERA (DETIK):</label>
+        <div class="slider-box">
+          <input type="range" id="flagDurationRange" min="1" max="10" step="1" value="3" oninput="document.getElementById('flagDurLabel').innerText = this.value + ' Detik'">
+          <span id="flagDurLabel" style="font-family:var(--font-mono); font-weight:900; color:var(--gold); min-width:55px; text-align:right;">3 Detik</span>
+        </div>
+
+        <label style="color:var(--gold); font-weight:800; margin-top:2px;">✨ GAYA ANIMASI BENDERA (CINEMATIC):</label>
+        <select id="flagAnimSelect" class="input-field">
+          <option value="DEMON_RAGE">👹 1. Demon Rage Float (Best)</option>
+          <option value="CINEMATIC_ORBIT">🪐 2. Cinematic 3D Orbit Float</option>
+          <option value="NEON_AURA">✨ 3. Neon Aura Pulse Float</option>
+          <option value="SILK_WAVE">🌊 4. Silk Waving Parallax</option>
+          <option value="SMOOTH_ELASTIC">🎈 5. Elastic Smooth Bounce</option>
+          <option value="HOLO_DIMENSION">🔮 6. Hologram Dimension Float</option>
+          <option value="INFINITY_LOOP">♾️ 7. Infinity 8 Motion Loop</option>
+          <option value="CODESHIFT_TILT">📐 8. CodeShift 3D Tilt Float</option>
+          <option value="ROYAL_GOLD">👑 9. Royal Gold Glow Float</option>
+          <option value="COSMIC_ZEROG">🚀 10. Cosmic Zero-G Floating</option>
+        </select>
+
+        <label style="color:var(--lime); font-weight:800; margin-top:4px;">✨ TRANSPARANSI UI (OPACITY PANEL):</label>
+        <div class="slider-box">
+          <input type="range" id="opacityRange" min="0.1" max="1.0" step="0.05" value="0.88" oninput="App.updateOpacityFromSlider(this.value)">
+          <span id="opacityValLabel" style="font-family:var(--font-mono); font-weight:900; color:var(--lime); min-width:35px; text-align:right;">88%</span>
+        </div>
+
+        <div style="display:flex; gap:4px; margin-top:4px;">
+          <button class="btn btn-lime btn-sm" style="flex:1;" onclick="App.saveClientBranding()">💾 SIMPAN BRANDING</button>
+          <button class="btn btn-pink btn-sm" onclick="App.resetBackground()">🗑️ RESET BG</button>
+        </div>
+
+        <hr style="border-color:var(--border-lime); margin:4px 0;">
+        <button class="btn btn-purple btn-sm" onclick="App.exportCSV()">📥 EXPORT CSV</button>
+        <button class="btn btn-dark btn-sm" onclick="App.exportJSON()">💾 BACKUP DATA (JSON)</button>
+        <button class="btn btn-dark btn-sm" onclick="document.getElementById('importFile').click()">📤 RESTORE DATA</button>
+        <input type="file" id="importFile" class="hidden" accept=".json" onchange="App.importJSON(event)">
+        <hr style="border-color:var(--border-lime);">
+        <button class="btn btn-pink btn-sm" onclick="App.deleteAllParticipants()">🗑️ HAPUS SEMUA PESERTA</button>
+        <button class="btn btn-pink btn-sm" onclick="App.resetAllData()">⚠️ RESET ALL DATA</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="addModal">
+    <div class="modal-card">
+      <div class="card-title">
+        <span>TAMBAH PESERTA</span>
+        <button class="btn btn-pink btn-sm" onclick="App.closeModal('addModal')">X</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <input type="text" id="newPesertaName" class="input-field" placeholder="Nama Peserta...">
+        <div class="file-input-wrapper">
+          <button class="btn btn-dark btn-sm" id="btnLocalAvatarLabel" style="width:100%;">📁 UPLOAD FOTO LOKAL</button>
+          <input type="file" id="newPesertaAvatarFile" accept="image/*" onchange="App.handleFileSelect(event)">
+        </div>
+        <input type="text" id="newPesertaAvatarUrl" class="input-field" placeholder="Atau URL Foto Avatar...">
+        <select id="newPesertaType" class="input-field">
+          <option value="FIXED">FIXED</option>
+          <option value="RANDOM">RANDOM</option>
+        </select>
+        <button class="btn btn-lime btn-sm" style="width:100%;" onclick="App.addPeserta()">SIMPAN</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay hidden" id="winnerModal">
+    <div class="modal-card" style="width:580px; text-align:center;">
+      <div style="font-size:14px; font-weight:900; color:var(--gold); margin-bottom:6px;">🏆 GRAND CHAMPIONS TOURNAMENT 🏆</div>
+      <div id="winnerPodiumGrid" style="display:flex; justify-content:center; align-items:flex-end; gap:12px; margin:12px 0;"></div>
+      <button class="btn btn-gold btn-sm" style="width:100%;" onclick="App.closeModal('winnerModal')">TUTUP</button>
+    </div>
+  </div>
+
+  <input type="file" id="changeAvatarFileInput" class="hidden" accept="image/*" onchange="App.handleAvatarChangeFile(event)">
+
+  <script>
+    const DEFAULT_AVATAR = 'https://api.dicebear.com/7.x/bottts/svg?seed=';
+
+    const AudioEngine = {
+      ctx: null,
+      init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+      playPop() {
+        this.init(); const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(600, this.ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.08);
+        g.gain.setValueAtTime(0.3, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.08);
+        o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + 0.08);
+      },
+      playAlert() {
+        this.init(); const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+        o.type = 'triangle'; o.frequency.setValueAtTime(400, this.ctx.currentTime);
+        o.frequency.setValueAtTime(800, this.ctx.currentTime + 0.1);
+        g.gain.setValueAtTime(0.4, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.25);
+        o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + 0.25);
+      },
+      playBuzzer() {
+        this.init(); const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(150, this.ctx.currentTime);
+        g.gain.setValueAtTime(0.6, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.8);
+        o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + 0.8);
+      },
+      playThiefSiren() {
+        this.init();
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        let now = this.ctx.currentTime;
+        o.frequency.setValueAtTime(600, now);
+        o.frequency.linearRampToValueAtTime(1400, now + 0.25);
+        o.frequency.linearRampToValueAtTime(600, now + 0.5);
+        o.frequency.linearRampToValueAtTime(1400, now + 0.75);
+        o.frequency.linearRampToValueAtTime(600, now + 1.0);
+        g.gain.setValueAtTime(0.8, now);
+        g.gain.linearRampToValueAtTime(0.01, now + 1.2);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(now); o.stop(now + 1.2);
+      },
+      playTick(sec) {
+        this.init();
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        const pitch = 900 + ((11 - sec) * 130); 
+        o.frequency.setValueAtTime(pitch, this.ctx.currentTime);
+        g.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(); o.stop(this.ctx.currentTime + 0.12);
+      },
+      playExplosion() {
+        this.init();
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(120, this.ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(20, this.ctx.currentTime + 1.2);
+        g.gain.setValueAtTime(0.8, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.2);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(); o.stop(this.ctx.currentTime + 1.2);
+
+        const bufferSize = this.ctx.sampleRate * 1.0;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+        const whiteNoise = this.ctx.createBufferSource();
+        whiteNoise.buffer = buffer;
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'lowpass';
+        noiseFilter.frequency.setValueAtTime(800, this.ctx.currentTime);
+        noiseFilter.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 1.0);
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 1.0);
+
+        whiteNoise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(this.ctx.destination);
+        whiteNoise.start(); whiteNoise.stop(this.ctx.currentTime + 1.0);
+      },
+      playFanfare() {
+        this.init(); const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((f, i) => {
+          const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+          o.type = 'triangle'; o.frequency.setValueAtTime(f, this.ctx.currentTime + (i * 0.12));
+          g.gain.setValueAtTime(0.4, this.ctx.currentTime + (i * 0.12));
+          g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + (i * 0.12) + 0.35);
+          o.connect(g); g.connect(this.ctx.destination); o.start(this.ctx.currentTime + (i * 0.12)); o.stop(this.ctx.currentTime + (i * 0.12) + 0.35);
+        });
+      }
+    };
+
+    const App = {
+      tempBase64Avatar: null,
+      tempBase64Bg: null,
+      editingParticipantId: null,
+      isSpinning: false,
+      state: {
+        mode: 'SURVIVAL',
+        clientName: 'OFFICIAL STORE',
+        bgImage: '',
+        panelOpacity: 0.88,
+        customTextColor: '#ffffff',
+        flagDuration: 3,
+        flagAnimation: 'DEMON_RAGE',
+        timer: { isRunning: false, durationMinutes: 15, secondsLeft: 900, intervalId: null },
+        survival: { round: 1 }, pointRushLocation: 'COPPER CANYON', selectedId: null, currentFilter: 'ALL',
+        participants: Array.from({ length: 20 }, (_, i) => ({
+          id: `p_${i+1}`,
+          name: `Player ${i+1}`,
+          avatar: DEFAULT_AVATAR + `Player${i+1}`,
+          type: i < 10 ? 'FIXED' : 'RANDOM',
+          status: 'ACTIVE',
+          present: true,
+          isPaid: false,
+          totalScore: 0,
+          roundCatches: [],
+          historyLog: []
+        })),
+        history: []
+      },
+
+      pointRushLocations: [
+        "COPPER CANYON", "ANCIENT JUNGLE", "THRONE ROOM", "UNDERWATER CITY",
+        "FISHERMAN ISLAND", "OCEAN", "KOHANA", "KOHANA VOLCANO", "VOLCANIC CAVERN",
+        "CORAL REEFS", "ESOTERIC DEPTHS", "TROPICAL GROVE", "CRATER ISLAND", "SISYPUS STATUE",
+        "TREASURE ROOM", "PLANETARY OBSERVATORY", "LAVA BASIN", "UNDERGROUND CELLAR",
+        "SACRED TEMPLE", "STINGRAY SHORES", "COPPER CANYON MINES",
+        "SEWERS", "KOHANA LAB", "ANCIENT RUIN", "PIRATE COVE", "PIRATE TREASURE ROOM",
+        "CRYSTAL DEPTHS", "GLOOMCAP GROTTO", "ELEMENTAL ISLAND", "WEATHER MACHINE"
+      ],
+
+      mitosMaps: ["COPPER CANYON", "ANCIENT JUNGLE", "THRONE ROOM", "UNDERWATER CITY", "SEWERS"],
+
+      locationSpecificFishNames: {
+        "ANCIENT JUNGLE": ["RAGNAREX", "THUNDERZILLA"],
+        "KOHANA": ["EVERBLOOM"],
+        "COPPER CANYON MINES": ["CERULEAN DRAGON"],
+        "UNDERWATER CITY": ["SEA EATER", "FLOURIVANE"],
+        "MARIANA TRENCH": ["TRENCH WARDEN"],
+        "THRONE ROOM": ["HYDRA", "OVERLORD HYDRA"],
+        "GLOOMCAP GROTTO": ["CRIMSON DREADTUSK"],
+        "CRATER ISLAND": ["FB 100KG++", "FB MAXTON", "CRYSTALLINE BEHEMOTH"],
+        "SEWERS": ["SEA EATER", "FLOURIVANE"],
+        "SISYPUS STATUE": ["PELAGON"],
+        "WEATHER MACHINE": ["WORMFISH"],
+        "PLANETARY OBSERVATORY": ["COSMIC SHARK"]
+      },
+
+      init() {
+        this.loadStorage();
+        this.setupAntiInspect();
+        this.applyOpacityCss(this.state.panelOpacity || 0.88);
+        this.applyCustomTextColor(this.state.customTextColor || '#ffffff');
+        this.renderAll();
+      },
+
+      setupAntiInspect() {
+        const triggerThiefLock = () => {
+          const overlay = document.getElementById('antiInspectOverlay');
+          if (overlay) {
+            overlay.classList.remove('hidden');
+            let bTxt = '';
+            for (let i = 0; i < 2500; i++) bTxt += Math.round(Math.random()) + ' ';
+            document.getElementById('binaryBgContainer').innerText = bTxt;
+            AudioEngine.playThiefSiren();
+          }
+        };
+
+        document.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          triggerThiefLock();
+        });
+
+        document.addEventListener('keydown', (e) => {
+          if (
+            e.keyCode === 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || 
+            (e.ctrlKey && e.keyCode === 85)
+          ) {
+            e.preventDefault();
+            triggerThiefLock();
+          }
+        });
+      },
+
+      saveStorage() {
+        localStorage.setItem('GALATAMA_V6_HORIZONTAL', JSON.stringify(this.state));
+      },
+
+      loadStorage() {
+        const saved = localStorage.getItem('GALATAMA_V6_HORIZONTAL');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            this.state.mode = parsed.mode || 'SURVIVAL';
+            this.state.clientName = parsed.clientName || 'OFFICIAL STORE';
+            this.state.bgImage = parsed.bgImage || '';
+            this.state.panelOpacity = parsed.panelOpacity !== undefined ? parsed.panelOpacity : 0.88;
+            this.state.customTextColor = parsed.customTextColor || '#ffffff';
+            this.state.flagDuration = parsed.flagDuration !== undefined ? parsed.flagDuration : 3;
+            this.state.flagAnimation = parsed.flagAnimation || 'DEMON_RAGE';
+            this.state.timer.durationMinutes = parsed.timer?.durationMinutes || 15;
+            this.state.timer.secondsLeft = parsed.timer?.secondsLeft || 900;
+            this.state.survival = parsed.survival || this.state.survival;
+            this.state.pointRushLocation = parsed.pointRushLocation || 'COPPER CANYON';
+            this.state.participants = parsed.participants || this.state.participants;
+            this.state.history = parsed.history || [];
+          } catch(e){}
+        }
+      },
+
+      applyOpacityCss(val) {
+        const opacityNum = parseFloat(val);
+        const cardOpacityNum = Math.max(0.1, opacityNum - 0.08);
+        document.documentElement.style.setProperty('--panel-opacity', opacityNum);
+        document.documentElement.style.setProperty('--card-opacity', cardOpacityNum);
+      },
+
+      updateOpacityFromSlider(val) {
+        this.state.panelOpacity = parseFloat(val);
+        this.applyOpacityCss(val);
+        document.getElementById('opacityValLabel').innerText = Math.round(val * 100) + '%';
+        this.saveStorage();
+      },
+
+      updateCustomTextColor(hexVal) {
+        if (!hexVal.startsWith('#') && hexVal.length === 6) hexVal = '#' + hexVal;
+        this.state.customTextColor = hexVal;
+        this.applyCustomTextColor(hexVal);
+        this.saveStorage();
+      },
+
+      applyCustomTextColor(hexVal) {
+        document.documentElement.style.setProperty('--custom-text-color', hexVal);
+        const picker = document.getElementById('customTextColorPicker');
+        const textHex = document.getElementById('customTextColorHex');
+        if (picker) picker.value = hexVal;
+        if (textHex) textHex.value = hexVal;
+      },
+
+      saveClientBranding() {
+        const cName = document.getElementById('clientLicenseInput').value.trim();
+        const urlInput = document.getElementById('customBgUrlInput').value.trim();
+        const flagDur = parseInt(document.getElementById('flagDurationRange').value);
+        const flagAnim = document.getElementById('flagAnimSelect').value;
+
+        if (cName) this.state.clientName = cName;
+        if (this.tempBase64Bg) this.state.bgImage = this.tempBase64Bg;
+        else if (urlInput) this.state.bgImage = urlInput;
+
+        this.state.flagDuration = flagDur;
+        this.state.flagAnimation = flagAnim;
+
+        this.saveStorage();
+        this.renderAll();
+        alert('Pengaturan Branding & Bendera Berhasil Disimpan!');
+      },
+
+      resetBackground() {
+        this.state.bgImage = '';
+        this.tempBase64Bg = null;
+        document.getElementById('btnBgFileLabel').innerText = '📁 UPLOAD GAMBAR BACKGROUND';
+        document.getElementById('customBgUrlInput').value = '';
+        this.saveStorage();
+        this.renderAll();
+      },
+
+      handleBgFileSelect(e) {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          this.tempBase64Bg = evt.target.result;
+          document.getElementById('btnBgFileLabel').innerText = `✅ TERPILIH`;
+        };
+        reader.readAsDataURL(file);
+      },
+
+      startTimer() {
+        if (this.state.timer.isRunning) return;
+
+        const activeParticipants = this.state.participants;
+        if (activeParticipants.length === 0) {
+          alert("⚠️ Belum ada peserta terdaftar dalam turnamen!");
+          return;
+        }
+
+        const unpresentPlayers = activeParticipants.filter(p => !p.present).map(p => p.name);
+        const unpaidPlayers = activeParticipants.filter(p => p.present && !p.isPaid).map(p => p.name);
+
+        let warningMsg = "";
+        if (unpresentPlayers.length > 0) warningMsg += `❌ Peserta belum HADIR (${unpresentPlayers.length}):\n- ${unpresentPlayers.join(', ')}\n\n`;
+        if (unpaidPlayers.length > 0) warningMsg += `💰 Peserta hadir tapi BELUM PAY (${unpaidPlayers.length}):\n- ${unpaidPlayers.join(', ')}`;
+
+        if (warningMsg !== "") {
+          AudioEngine.playBuzzer();
+          alert("⚠️ TIMER TIDAK BISA DIMULAI!\n\nMohon pastikan semua peserta hadir dan sudah melunasi pembayaran (PAY):\n\n" + warningMsg);
+          return;
+        }
+
+        const bannerOverlay = document.getElementById('flagBannerOverlay');
+        const flagCloth = document.getElementById('flagClothElement');
+        const clientText = (this.state.clientName || 'OFFICIAL STORE').toUpperCase();
+        
+        document.getElementById('flagClientTitle').innerText = clientText;
+        flagCloth.className = `flag-cloth anim-${this.state.flagAnimation || 'DEMON_RAGE'}`;
+
+        if (this.state.bgImage) {
+          flagCloth.style.backgroundImage = `url("${this.state.bgImage}")`;
+        } else {
+          flagCloth.style.backgroundImage = 'linear-gradient(135deg, #00ffb2, #8a2be2)';
+        }
+
+        bannerOverlay.classList.remove('hidden');
+        AudioEngine.playFanfare();
+
+        const durationMs = (this.state.flagDuration || 3) * 1000;
+        setTimeout(() => {
+          bannerOverlay.classList.add('hidden');
+        }, durationMs);
+
+        this.actualStartTimer();
+      },
+
+      actualStartTimer() {
+        this.state.timer.isRunning = true;
+        clearInterval(this.state.timer.intervalId);
+        this.state.timer.intervalId = setInterval(() => {
+          if (this.state.timer.secondsLeft > 0) {
+            this.state.timer.secondsLeft--;
+            if (this.state.timer.secondsLeft <= 10 && this.state.timer.secondsLeft > 0) {
+              AudioEngine.playTick(this.state.timer.secondsLeft);
+            }
+            this.renderTimerDisplay();
+            this.saveStorage();
+          } else {
+            this.pauseTimer(); 
+            AudioEngine.playExplosion();
+            alert('💥 WAKTU HABIS! BOM MELEDAK!\nInput tangkapan dikunci.');
+            this.renderCatchGrid();
+          }
+        }, 1000);
+        this.renderTimerDisplay();
+      },
+
+      pauseTimer() { 
+        this.state.timer.isRunning = false; 
+        clearInterval(this.state.timer.intervalId); 
+        this.saveStorage(); 
+        this.renderTimerDisplay();
+      },
+
+      resetTimer() { 
+        this.pauseTimer(); 
+        this.state.timer.secondsLeft = this.state.timer.durationMinutes * 60; 
+        this.renderTimerDisplay(); 
+        this.renderCatchGrid(); 
+        this.saveStorage(); 
+      },
+
+      setCustomTime() {
+        const min = prompt("Durasi timer (Menit):", this.state.timer.durationMinutes);
+        if (min && !isNaN(min) && min > 0) {
+          this.state.timer.durationMinutes = parseInt(min); this.resetTimer();
+        }
+      },
+
+      changeMode(newMode) {
+        this.state.mode = newMode;
+        this.saveStorage(); this.renderAll();
+      },
+
+      setPointRushLocation(locName) {
+        this.state.pointRushLocation = locName; this.saveStorage(); this.renderPointRush(); this.renderCatchGrid();
+      },
+
+      spinWheel() {
+        if (this.isSpinning) return;
+        this.isSpinning = true;
+        const display = document.getElementById('spinwheelDisplay');
+        display.classList.add('animating');
+        
+        let counter = 0; const speed = 50; const totalDuration = 2000;
+        const spinInterval = setInterval(() => {
+          const rand = Math.floor(Math.random() * this.pointRushLocations.length);
+          display.innerText = this.pointRushLocations[rand];
+          AudioEngine.playPop(); counter += speed;
+          
+          if (counter >= totalDuration) {
+            clearInterval(spinInterval);
+            const finalLoc = this.pointRushLocations[Math.floor(Math.random() * this.pointRushLocations.length)];
+            display.innerText = finalLoc;
+            display.classList.remove('animating');
+            this.isSpinning = false;
+            this.setPointRushLocation(finalLoc);
+            AudioEngine.playFanfare();
+          }
+        }, speed);
+      },
+
+      toggleAttendance(id) {
+        const p = this.state.participants.find(x => x.id === id);
+        if (p) { p.present = !p.present; this.saveStorage(); this.renderAll(); }
+      },
+
+      togglePayment(id, checkboxEl) {
+        const p = this.state.participants.find(x => x.id === id);
+        if (p) {
+          p.isPaid = checkboxEl.checked;
+          this.saveStorage();
+          this.renderStats();
+          const wrapper = checkboxEl.closest('.pay-checkbox-wrapper');
+          if (wrapper) wrapper.classList.toggle('checked', p.isPaid);
+        }
+      },
+
+      markAllAttendance(status) {
+        this.state.participants.forEach(p => p.present = status);
+        this.saveStorage(); this.renderAll();
+      },
+
+      markAllPayment(status) {
+        this.state.participants.forEach(p => p.isPaid = status);
+        this.saveStorage(); this.renderAll();
+      },
+
+      handleFileSelect(e) {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          this.tempBase64Avatar = evt.target.result;
+          document.getElementById('btnLocalAvatarLabel').innerText = `✅ TERPILIH`;
+        };
+        reader.readAsDataURL(file);
+      },
+
+      handleAvatarChangeFile(e) {
+        const file = e.target.files[0];
+        if (!file || !this.editingParticipantId) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const p = this.state.participants.find(x => x.id === this.editingParticipantId);
+          if (p) { p.avatar = evt.target.result; this.saveStorage(); this.renderAll(); this.showPlayerDetail(p.id); }
+        };
+        reader.readAsDataURL(file);
+      },
+
+      triggerChangeAvatarFile(id) {
+        this.editingParticipantId = id;
+        document.getElementById('changeAvatarFileInput').click();
+      },
+
+      updateParticipantName(id) {
+        const input = document.getElementById(`editNameInput_${id}`);
+        if (!input) return;
+        const newName = input.value.trim();
+        if (!newName) return alert('Nama tidak boleh kosong!');
+        const p = this.state.participants.find(x => x.id === id);
+        if (p) {
+          p.name = newName;
+          this.saveStorage();
+          this.renderAll();
+          alert('Nama berhasil diubah!');
+        }
+      },
+
+      quickAddPeserta() {
+        const input = document.getElementById('quickPesertaName');
+        const name = input.value.trim();
+        if (!name) return;
+
+        this.state.participants.push({
+          id: 'p_' + Date.now(),
+          name: name,
+          avatar: DEFAULT_AVATAR + encodeURIComponent(name),
+          type: 'FIXED',
+          status: 'ACTIVE',
+          present: true,
+          isPaid: false,
+          totalScore: 0,
+          roundCatches: [],
+          historyLog: []
+        });
+
+        input.value = '';
+        this.saveStorage();
+        this.renderAll();
+      },
+
+      submitCatch(catchResult, pointOverride) {
+        if (this.state.timer.secondsLeft <= 0) return alert("⛔ Waktu telah habis! Tekan tombol RESET untuk membuka kunci inputan.");
+        if (!this.state.selectedId) return alert('Pilih kartu peserta dulu!');
+        const p = this.state.participants.find(x => x.id === this.state.selectedId);
+        if (!p) return;
+        if (p.status !== 'ACTIVE') return alert(`Peserta ${p.name} tereliminasi!`);
+
+        let points = pointOverride !== undefined ? pointOverride : 0;
+        p.totalScore += points;
+        if(!p.roundCatches) p.roundCatches = [];
+        p.roundCatches.push(catchResult);
+
+        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const logId = 'log_' + Date.now();
+
+        if(!p.historyLog) p.historyLog = [];
+        p.historyLog.push({ id: logId, result: catchResult, points: points, mode: this.state.mode });
+
+        let locDetail = this.state.mode === 'POINT_RUSH' ? this.state.pointRushLocation : null;
+        this.state.history.unshift({
+          id: logId, participantId: p.id, time: timeStr, participantName: p.name,
+          participantAvatar: p.avatar, mode: this.state.mode,
+          round: this.state.mode === 'SURVIVAL' ? this.state.survival.round : null,
+          location: locDetail, catchResult: catchResult, points: points
+        });
+
+        AudioEngine.playPop(); this.saveStorage(); this.renderAll();
+      },
+
+      submitDropdownCatch(catSelectId, valSelectId) {
+        if (this.state.timer.secondsLeft <= 0) return alert("⛔ Waktu telah habis! Tekan tombol RESET untuk membuka kunci inputan.");
+        const catSel = document.getElementById(catSelectId);
+        const valSel = document.getElementById(valSelectId);
+        if (!catSel || !valSel) return;
+        const categoryName = catSel.value;
+        const selectedOpt = valSel.options[valSel.selectedIndex];
+        const catchName = selectedOpt.text.split(' (')[0];
+        const points = parseInt(selectedOpt.value) || 0;
+        this.submitCatch(`[${categoryName}] ${catchName}`, points);
+      },
+
+      submitSpecificFishDropdown(fishName, selectId) {
+        if (this.state.timer.secondsLeft <= 0) return alert("⛔ Waktu telah habis! Tekan tombol RESET untuk membuka kunci inputan.");
+        const valSel = document.getElementById(selectId);
+        if (!valSel) return;
+        const selectedOpt = valSel.options[valSel.selectedIndex];
+        this.submitCatch(`[FORGOTTEN] ${selectedOpt.text}`, parseInt(selectedOpt.value));
+      },
+
+      deleteLog(logId) {
+        const itemIndex = this.state.history.findIndex(h => h.id === logId);
+        if (itemIndex === -1) return;
+        const item = this.state.history[itemIndex];
+        if (confirm(`Batalkan tangkapan "${item.catchResult}" (+${item.points} pts) untuk ${item.participantName}?`)) {
+          const p = this.state.participants.find(x => x.id === item.participantId || x.name === item.participantName);
+          if (p) {
+            p.totalScore = Math.max(0, p.totalScore - item.points);
+            if(p.historyLog) p.historyLog = p.historyLog.filter(x => x.id !== logId);
+          }
+          this.state.history.splice(itemIndex, 1);
+          AudioEngine.playAlert(); this.saveStorage(); this.renderAll();
+        }
+      },
+
+      overrideScore(id) {
+        const p = this.state.participants.find(x => x.id === id); if (!p) return;
+        const newScore = prompt(`Total Poin Baru untuk ${p.name}:`, p.totalScore);
+        if (newScore !== null && !isNaN(newScore)) {
+          p.totalScore = parseInt(newScore); this.saveStorage(); this.renderAll();
+        }
+      },
+
+      nextRound() {
+        if (this.state.mode !== 'SURVIVAL') return;
+        this.state.participants.forEach(p => {
+          if (p.status === 'ACTIVE') {
+            const hasPassed = (p.roundCatches || []).some(c => c.includes('SECRET') || c.includes('MITOS') || c.includes('FORGOTTEN') || c.includes('RAGNAREX') || c.includes('HYDRA') || c.includes('EVERBLOOM') || c.includes('PELAGON') || c.includes('WORMFISH') || c.includes('COSMIC SHARK'));
+            if (!hasPassed) p.status = 'ELIMINATED';
+            p.roundCatches = [];
+          }
+        });
+        if (this.state.survival.round < 5) this.state.survival.round += 1;
+        else alert('Survival Mode mencapai Round Akhir (5)!');
+        AudioEngine.playAlert(); this.resetTimer(); this.saveStorage(); this.renderAll();
+      },
+
+      addPeserta() {
+        const inputName = document.getElementById('newPesertaName');
+        const inputUrl = document.getElementById('newPesertaAvatarUrl');
+        const typeSelect = document.getElementById('newPesertaType');
+        const name = inputName.value.trim(); if (!name) return;
+
+        let finalAvatar = DEFAULT_AVATAR + encodeURIComponent(name);
+        if (this.tempBase64Avatar) finalAvatar = this.tempBase64Avatar;
+        else if (inputUrl.value.trim()) finalAvatar = inputUrl.value.trim();
+
+        this.state.participants.push({
+          id: 'p_' + Date.now(), name: name, avatar: finalAvatar, type: typeSelect.value,
+          status: 'ACTIVE', present: true, isPaid: false, totalScore: 0, roundCatches: [], historyLog: []
+        });
+
+        inputName.value = ''; inputUrl.value = ''; this.tempBase64Avatar = null;
+        document.getElementById('btnLocalAvatarLabel').innerText = '📁 UPLOAD FOTO LOKAL';
+        this.closeModal('addModal'); this.saveStorage(); this.renderAll();
+      },
+
+      deletePeserta(id) {
+        if (confirm("Hapus peserta ini dari turnamen?")) {
+          this.state.participants = this.state.participants.filter(x => x.id !== id);
+          if (this.state.selectedId === id) this.state.selectedId = null;
+          this.closeModal('playerModal');
+          this.saveStorage(); this.renderAll();
+        }
+      },
+
+      deleteAllParticipants() {
+        if (confirm("Yakin ingin menghapus SEMUA peserta?")) {
+          this.state.participants = [];
+          this.state.selectedId = null;
+          this.closeModal('settingsModal');
+          this.saveStorage();
+          this.renderAll();
+        }
+      },
+
+      showPlayerDetail(id) {
+        const p = this.state.participants.find(x => x.id === id); if (!p) return;
+        this.editingParticipantId = p.id;
+        document.getElementById('modalPlayerName').innerText = `DETAIL: ${p.name.toUpperCase()}`;
+        
+        let logHtml = (p.historyLog || []).map(h => `
+          <div style="display:flex; justify-content:space-between; background:rgba(0,0,0,0.5); padding:5px; border-radius:5px; align-items:center;">
+            <span>${h.result} (${h.mode})</span>
+            <b style="color:var(--lime);">+${h.points} Pts</b>
+          </div>
+        `).join('') || '<p style="color:var(--text-muted);">Belum ada tangkapan.</p>';
+
+        document.getElementById('modalPlayerStats').innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <img src="${p.avatar}" style="width:42px; height:42px; border-radius:50%; object-fit:cover; border:2px solid var(--lime);">
+            <div style="flex:1;">
+              <div style="display:flex; gap:4px; margin-bottom:4px;">
+                <input type="text" id="editNameInput_${p.id}" class="input-field" value="${p.name}" style="padding:3px 6px;">
+                <button class="btn btn-lime btn-sm" onclick="App.updateParticipantName('${p.id}')">UBAH</button>
+              </div>
+              <div>ABSEN: <b style="color:${p.present ? 'var(--lime)' : 'var(--pink)'}">${p.present ? 'HADIR' : 'ALPHA'}</b> | BAYAR: <b style="color:${p.isPaid ? 'var(--gold)' : 'var(--text-muted)'}">${p.isPaid ? 'LUNAS' : 'BELUM'}</b></div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <span>TOTAL POIN: <b style="color:var(--gold); font-size:14px;">${p.totalScore}</b></span>
+            <div style="display:flex; gap:4px;">
+              <button class="btn btn-purple btn-sm" onclick="App.triggerChangeAvatarFile('${p.id}')">📂 FOTO</button>
+              <button class="btn btn-pink btn-sm" onclick="App.deletePeserta('${p.id}')">🗑️ HAPUS</button>
+            </div>
+          </div>
+          <hr style="border-color:var(--border-lime); margin:6px 0;">
+          <b style="color:var(--lime);">RIWAYAT TANGKAPAN:</b>
+          <div style="max-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;">${logHtml}</div>
+        `;
+        this.openModal('playerModal');
+      },
+
+      announceWinners() {
+        const sorted = [...this.state.participants].sort((a,b) => b.totalScore - a.totalScore);
+        const top1 = sorted[0]; const top2 = sorted[1]; const top3 = sorted[2];
+        let html = '';
+
+        if(top2) {
+          html += `<div style="background:rgba(12,18,32,0.95); border:1.5px solid var(--text-muted); border-radius:10px; padding:10px; width:155px; text-align:center; height:185px; clip-path:polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);">
+            <div style="font-size:8.5px; background:var(--text-muted); color:#000; padding:2px 6px; border-radius:99px; font-weight:900; margin-bottom:6px;">🥈 JUARA 2</div>
+            <img src="${top2.avatar}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid var(--text-muted); margin-bottom:4px;">
+            <div style="font-weight:900; font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${top2.name}</div>
+            <div style="font-family:var(--font-mono); color:var(--lime); font-weight:900; font-size:13px; margin-top:4px;">${top2.totalScore} Pts</div>
+          </div>`;
+        }
+        if(top1) {
+          html += `<div style="background:rgba(25,20,10,0.95); border:2px solid var(--gold); border-radius:10px; padding:10px; width:175px; text-align:center; height:210px; transform:scale(1.04); clip-path:polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);">
+            <div style="font-size:9px; background:var(--gold); color:#000; padding:2px 8px; border-radius:99px; font-weight:900; margin-bottom:6px;">👑 JUARA 1</div>
+            <img src="${top1.avatar}" style="width:58px; height:58px; border-radius:50%; object-fit:cover; border:2.5px solid var(--gold); margin-bottom:4px;">
+            <div style="font-weight:900; font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${top1.name}</div>
+            <div style="font-family:var(--font-mono); color:var(--lime); font-weight:900; font-size:15px; margin-top:4px;">${top1.totalScore} Pts</div>
+          </div>`;
+        }
+        if(top3) {
+          html += `<div style="background:rgba(12,18,32,0.95); border:1.5px solid #cd7f32; border-radius:10px; padding:10px; width:155px; text-align:center; height:170px; clip-path:polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);">
+            <div style="font-size:8.5px; background:#cd7f32; color:#fff; padding:2px 6px; border-radius:99px; font-weight:900; margin-bottom:6px;">🥉 JUARA 3</div>
+            <img src="${top3.avatar}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #cd7f32; margin-bottom:4px;">
+            <div style="font-weight:900; font-size:10.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${top3.name}</div>
+            <div style="font-family:var(--font-mono); color:var(--lime); font-weight:900; font-size:13px; margin-top:4px;">${top3.totalScore} Pts</div>
+          </div>`;
+        }
+
+        document.getElementById('winnerPodiumGrid').innerHTML = html || '<p style="color:var(--text-muted)">Belum ada data.</p>';
+        this.openModal('winnerModal'); AudioEngine.playFanfare();
+      },
+
+      exportCSV() {
+        let csv = 'Nama,Tipe,Absen,Bayar,Status,Total Poin\n';
+        this.state.participants.forEach(p => csv += `"${p.name}","${p.type}","${p.present ? 'HADIR' : 'ALPHA'}","${p.isPaid ? 'LUNAS' : 'BELUM'}","${p.status}",${p.totalScore}\n`);
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Galatama_Export_${Date.now()}.csv`; a.click();
+      },
+
+      exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.state));
+        const a = document.createElement('a'); a.href = dataStr; a.download = `Galatama_Backup_${Date.now()}.json`; a.click();
+      },
+
+      importJSON(e) {
+        const file = e.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const data = JSON.parse(event.target.result);
+            if (data.participants) { this.state = { ...this.state, ...data }; this.saveStorage(); this.renderAll(); alert("Restored!"); }
+          } catch(err){ alert("File tidak valid!"); }
+        };
+        reader.readAsText(file);
+      },
+
+      resetAllData() {
+        if (confirm("Reset seluruh data turnamen?")) { localStorage.removeItem('GALATAMA_V6_HORIZONTAL'); location.reload(); }
+      },
+
+      selectParticipant(id, name) {
+        this.state.selectedId = id;
+        document.getElementById('selectedLabel').innerText = `TERPILIH: ${name.toUpperCase()}`;
+        this.renderPeserta();
+      },
+
+      filterPeserta(el, type) {
+        document.querySelectorAll('aside .chip').forEach(t => t.classList.remove('active'));
+        el.classList.add('active'); this.state.currentFilter = type; this.renderPeserta();
+      },
+
+      openModal(id) { document.getElementById(id).classList.remove('hidden'); },
+      closeModal(id) { document.getElementById(id).classList.add('hidden'); },
+      openLogModal() { this.renderHistory(); this.openModal('logModal'); },
+      openSettingsModal() { 
+        document.getElementById('clientLicenseInput').value = this.state.clientName || 'OFFICIAL STORE';
+        const opVal = this.state.panelOpacity !== undefined ? this.state.panelOpacity : 0.88;
+        document.getElementById('opacityRange').value = opVal;
+        document.getElementById('opacityValLabel').innerText = Math.round(opVal * 100) + '%';
+        
+        const fDur = this.state.flagDuration !== undefined ? this.state.flagDuration : 3;
+        document.getElementById('flagDurationRange').value = fDur;
+        document.getElementById('flagDurLabel').innerText = fDur + ' Detik';
+
+        document.getElementById('flagAnimSelect').value = this.state.flagAnimation || 'DEMON_RAGE';
+        
+        const curTextCol = this.state.customTextColor || '#ffffff';
+        document.getElementById('customTextColorPicker').value = curTextCol;
+        document.getElementById('customTextColorHex').value = curTextCol;
+
+        this.openModal('settingsModal'); 
+      },
+      openAddModal() { this.openModal('addModal'); },
+
+      renderAll() {
+        this.renderBrandingAndBg();
+        this.renderTimerDisplay(); 
+        this.renderModeBoxes(); 
+        this.renderPointRush();
+        this.renderSurvival(); 
+        this.renderCatchGrid(); 
+        this.renderPeserta();
+        this.renderStats();
+      },
+
+      renderBrandingAndBg() {
+        document.getElementById('clientLicenseLabel').innerText = `LICENSED TO: ${(this.state.clientName || 'OFFICIAL STORE').toUpperCase()}`;
+        if (this.state.bgImage) {
+          document.body.style.backgroundImage = `url("${this.state.bgImage}")`;
+        } else {
+          document.body.style.backgroundImage = 'none';
+        }
+      },
+
+      renderStats() {
+        document.getElementById('statTotal').innerText = this.state.participants.length;
+        document.getElementById('statHadir').innerText = this.state.participants.filter(x => x.present).length;
+        document.getElementById('statAktif').innerText = this.state.participants.filter(x => x.status === 'ACTIVE').length;
+        document.getElementById('statPay').innerText = this.state.participants.filter(x => x.isPaid).length;
+      },
+
+      renderModeBoxes() {
+        document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+        document.getElementById(`m-${this.state.mode}`)?.classList.add('active');
+        document.getElementById('pointRushCard').classList.toggle('hidden', this.state.mode !== 'POINT_RUSH');
+        document.getElementById('survivalCard').classList.toggle('hidden', this.state.mode !== 'SURVIVAL');
+      },
+
+      renderTimerDisplay() {
+        const sec = this.state.timer.secondsLeft;
+        const minStr = String(Math.floor(sec / 60)).padStart(2, '0');
+        const secStr = String(sec % 60).padStart(2, '0');
+        document.getElementById('timerClock').innerText = `${minStr}:${secStr}`;
+
+        const giantEl = document.getElementById('giantTimerOverlay');
+        if (this.state.timer.isRunning && sec <= 10 && sec > 0) {
+          giantEl.innerText = sec;
+          giantEl.classList.remove('hidden');
+        } else {
+          giantEl.classList.add('hidden');
+        }
+      },
+
+      renderSurvival() {
+        if (this.state.mode === 'SURVIVAL') {
+          document.getElementById('roundText').innerText = `${this.state.survival.round} / 5`;
+          let html = '';
+          for (let i = 1; i <= 5; i++) html += `<div class="chip ${i === this.state.survival.round ? 'active' : ''}">${i}</div>`;
+          document.getElementById('roundChips').innerHTML = html;
+        }
+      },
+
+      renderPointRush() {
+        if (this.state.mode === 'POINT_RUSH') {
+          document.getElementById('spinwheelDisplay').innerText = this.state.pointRushLocation;
+          const q = (document.getElementById('searchLocation')?.value || '').toLowerCase();
+          let filteredLocs = this.pointRushLocations;
+          if (q) filteredLocs = filteredLocs.filter(l => l.toLowerCase().includes(q));
+
+          document.getElementById('pointRushLocationGrid').innerHTML = filteredLocs.map(loc => {
+            const hasM = this.mitosMaps.includes(loc) ? ' [🔥M]' : '';
+            const excludeFG = ["SISYPUS STATUE", "WEATHER MACHINE", "PLANETARY OBSERVATORY"].includes(loc);
+            const hasF = (!excludeFG && this.locationSpecificFishNames[loc]) ? ' [🐟FG]' : '';
+            return `<div class="loc-btn ${this.state.pointRushLocation === loc ? 'active' : ''}" onclick="App.setPointRushLocation('${loc}')">
+              ${loc}${hasM}${hasF}
+            </div>`;
+          }).join('') || '<div style="grid-column: span 3; text-align:center; color:var(--text-muted); font-size:8px;">Tidak ditemukan</div>';
+        }
+      },
+
+      renderCatchGrid() {
+        const wrapper = document.getElementById('dropdownWrapper');
+        const isTimeUp = this.state.timer.secondsLeft <= 0;
+
+        if (isTimeUp) {
+          wrapper.innerHTML = `<div style="background:rgba(255,0,85,0.15); border:1px solid var(--pink); padding:10px; border-radius:6px; text-align:center; color:var(--pink); font-weight:900;">
+            💥 WAKTU HABIS!<br>INPUT TANGKAPAN DIKUNCI.<br><span style="font-size:8px; color:var(--text-muted); font-weight:normal;">Tekan tombol RESET untuk membuka kunci</span>
+          </div>`;
+          return;
+        }
+
+        const currLoc = this.state.pointRushLocation;
+        const isMitos = this.state.mode === 'POINT_RUSH' && this.mitosMaps.includes(currLoc);
+
+        let sbVal = isMitos ? 2 : 1;
+        let html = `<div class="dropdown-box">
+          <label>Secret (All Maps):</label>
+          <select id="dropSecretVal" class="input-field">
+            <option value="${sbVal}">${isMitos ? 'Secret (+2)' : 'Secret (+1)'}</option>
+            <option value="${sbVal+1}">${isMitos ? 'Secret Mutasi/Big (+3)' : 'Secret Mutasi/Big (+2)'}</option>
+            <option value="${sbVal+2}">${isMitos ? 'Secret Big+Shiny (+4)' : 'Secret Big+Shiny (+3)'}</option>
+            <option value="${sbVal+3}">${isMitos ? 'Secret Rata Kanan (+5)' : 'Secret Rata Kanan (+4)'}</option>
+          </select>
+          <button class="btn btn-purple btn-sm" style="margin-top:3px;" onclick="App.submitDropdownCatch('dropSecretCat', 'dropSecretVal')">Kirim Secret</button>
+        </div><input type="hidden" id="dropSecretCat" value="SECRET">`;
+
+        if (this.state.mode !== 'SURVIVAL' && this.state.mode !== 'POINT_RUSH') {
+          let bName = this.state.mode.replace('_', ' ');
+          html += `<div class="dropdown-box">
+            <label>${bName}:</label>
+            <select id="dropBossVal" class="input-field">
+              <option value="4">${bName} Basic (+4)</option>
+              <option value="5">${bName} Mutasi/Big (+5)</option>
+              <option value="6">${bName} Big Shiny (+6)</option>
+              <option value="7">${bName} Rata Kanan (+7)</option>
+            </select>
+            <button class="btn btn-gold btn-sm" style="margin-top:3px;" onclick="App.submitDropdownCatch('dropBossCat', 'dropBossVal')">Kirim Poin</button>
+          </div><input type="hidden" id="dropBossCat" value="${bName}">`;
+        }
+
+        if (isMitos) {
+          html += `<div class="dropdown-box">
+            <label>Mitos (${currLoc}):</label>
+            <select id="dropMitosVal" class="input-field">
+              <option value="1">Mitos Basic (+1)</option>
+              <option value="2">Mitos Mutasi (+2)</option>
+              <option value="3">Mitos Big/Shiny (+3)</option>
+              <option value="4">Mitos Rata Kanan (+4)</option>
+            </select>
+            <button class="btn btn-gold btn-sm" style="margin-top:3px;" onclick="App.submitDropdownCatch('dropMitosCat', 'dropMitosVal')">Kirim Mitos</button>
+          </div><input type="hidden" id="dropMitosCat" value="MITOS">`;
+
+          if (currLoc === 'COPPER CANYON') {
+            html += `<div class="dropdown-box">
+              <label>Core (Copper Canyon):</label>
+              <select id="dropCoreVal" class="input-field">
+                <option value="3">Core Basic (+3)</option>
+                <option value="4">Core Mutasi (+4)</option>
+                <option value="5">Core Big+Shiny (+5)</option>
+                <option value="6">Core Rata Kanan (+6)</option>
+              </select>
+              <button class="btn btn-gold btn-sm" style="margin-top:3px;" onclick="App.submitDropdownCatch('dropCoreCat', 'dropCoreVal')">Kirim Core</button>
+            </div><input type="hidden" id="dropCoreCat" value="SECRET CORE">`;
+          }
+        }
+
+        if (this.state.mode === 'POINT_RUSH' && this.locationSpecificFishNames[currLoc]) {
+          this.locationSpecificFishNames[currLoc].forEach((fn, idx) => {
+            const isSecretTier = ["WORMFISH", "PELAGON", "COSMIC SHARK"].includes(fn);
+            const isFb100 = fn.includes("FB 100KG");
+            const isFbMaxton = fn.includes("FB MAXTON");
+
+            let bVal = 5;
+            if (isSecretTier) bVal = 2;
+            else if (isFb100) bVal = 3;
+
+            if (isFbMaxton) {
+              html += `<div class="dropdown-box">
+                <label>🐟 ${fn}:</label>
+                <select id="dropFishVal_${idx}" class="input-field">
+                  <option value="${bVal}">${fn} Basic (+${bVal})</option>
+                  <option value="${bVal+1}">${fn} Mutasi (+${bVal+1})</option>
+                  <option value="${bVal+2}">${fn} Shiny (+${bVal+2})</option>
+                  <option value="${bVal+3}">${fn} Mutasi+Shiny (+${bVal+3})</option>
+                </select>
+                <button class="btn btn-lime btn-sm" style="margin-top:3px;" onclick="App.submitSpecificFishDropdown('${fn}', 'dropFishVal_${idx}')">Kirim ${fn}</button>
+              </div>`;
+            } else {
+              html += `<div class="dropdown-box">
+                <label>🐟 ${fn}:</label>
+                <select id="dropFishVal_${idx}" class="input-field">
+                  <option value="${bVal}">${fn} Basic (+${bVal})</option>
+                  <option value="${bVal+1}">${fn} Mutasi (+${bVal+1})</option>
+                  <option value="${bVal+2}">${fn} Big+Shiny (+${bVal+2})</option>
+                  <option value="${bVal+3}">${fn} Rata Kanan (+${bVal+3})</option>
+                </select>
+                <button class="btn btn-lime btn-sm" style="margin-top:3px;" onclick="App.submitSpecificFishDropdown('${fn}', 'dropFishVal_${idx}')">Kirim ${fn}</button>
+              </div>`;
+            }
+          });
+        }
+
+        wrapper.innerHTML = html;
+      },
+
+      renderPeserta() {
+        let sorted = [...this.state.participants].sort((a,b) => b.totalScore - a.totalScore);
+        if (this.state.currentFilter !== 'ALL') sorted = sorted.filter(p => p.type === this.state.currentFilter);
+        const q = (document.getElementById('searchPeserta')?.value || '').toLowerCase();
+        if (q) sorted = sorted.filter(p => p.name.toLowerCase().includes(q));
+
+        document.getElementById('playerGridContainer').innerHTML = sorted.map((p, i) => {
+          let rankBadge = `#${i+1}`;
+          if (i === 0) rankBadge = `👑 #1`;
+          else if (i === 1) rankBadge = `🥈 #2`;
+          else if (i === 2) rankBadge = `🥉 #3`;
+
+          return `
+            <div class="player-card-box ${p.id === this.state.selectedId ? 'selected' : ''}" onclick="App.selectParticipant('${p.id}', '${p.name}')">
+              <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                <span style="font-size:8.5px; font-weight:900; color:var(--gold);">${rankBadge}</span>
+                <span class="status-tag ${p.status === 'ACTIVE' ? 'tag-active' : 'tag-elim'}">${p.status}</span>
+              </div>
+              <img src="${p.avatar}" class="player-card-avatar">
+              <div class="player-card-name" title="${p.name}">${p.name}</div>
+              <div class="player-card-score">${p.totalScore} Pts</div>
+              <div style="display:flex; gap:3px; width:100%; margin-top:2px; align-items:center;">
+                <span class="status-tag ${p.present ? 'tag-present' : 'tag-absent'}" style="flex:1; text-align:center;" onclick="event.stopPropagation(); App.toggleAttendance('${p.id}')">${p.present ? 'HADIR' : 'ALPHA'}</span>
+                
+                <label class="pay-checkbox-wrapper ${p.isPaid ? 'checked' : ''}" onclick="event.stopPropagation()">
+                  <input type="checkbox" ${p.isPaid ? 'checked' : ''} onchange="App.togglePayment('${p.id}', this)"> PAY
+                </label>
+
+                <button class="btn btn-lime btn-sm" style="padding:1px 4px; font-size:7px;" onclick="event.stopPropagation(); App.overrideScore('${p.id}')">POIN</button>
+                <button class="btn btn-dark btn-sm" style="padding:1px 4px; font-size:7px;" onclick="event.stopPropagation(); App.showPlayerDetail('${p.id}')">INFO</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      },
+
+      renderHistory() {
+        document.getElementById('historyTbody').innerHTML = this.state.history.map(h => `
+          <tr>
+            <td style="color:var(--text-muted);">${h.time}</td>
+            <td class="avatar-cell" style="display:flex; align-items:center; gap:4px;"><img src="${h.participantAvatar || DEFAULT_AVATAR + h.participantName}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;"><b>${h.participantName}</b></td>
+            <td>${h.mode} ${h.location ? `[${h.location}]` : ''}</td>
+            <td>${h.catchResult}</td>
+            <td style="color:var(--lime); font-family:var(--font-mono);">+${h.points}</td>
+            <td style="text-align:center;"><button class="btn btn-pink btn-sm" onclick="App.deleteLog('${h.id}')">UNDO</button></td>
+          </tr>
+        `).join('');
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+
+  <!-- ===== ADD-ON: LOGIN & LISENSI ===== -->
+  <div id="loginOverlay">
+    <div class="login-card">
+      <div class="login-brand">GALATAMA <span>NEXUS</span></div>
+
+      <!-- PANE AKTIVASI -->
+      <div class="pane hidden" id="paneActivate">
+        <div class="login-sub">AKTIVASI LISENSI</div>
+        <label class="lbl">Device ID perangkat ini (kirim ke pemilik sistem)</label>
+        <div class="devid-box">
+          <div class="devid" id="devIdText">...</div>
+          <button class="btn btn-dark btn-sm" id="btnCopyDev">SALIN</button>
+        </div>
+        <label class="lbl">Kode Lisensi dari pemilik</label>
+        <textarea id="licenseInput" class="input-field" placeholder="Tempel kode lisensi di sini..."></textarea>
+        <div id="activError"></div>
+        <button class="btn btn-lime" style="width:100%; padding:9px;" id="btnActivate">AKTIFKAN LISENSI</button>
+        <button class="link-btn hidden" id="btnBackLogin">← kembali ke login</button>
+      </div>
+
+      <!-- PANE LOGIN -->
+      <div class="pane hidden" id="paneLogin">
+        <div class="login-sub">SILAKAN LOGIN UNTUK MASUK SISTEM</div>
+        <div class="lic-info" id="licInfo"></div>
+        <label class="lbl">Username</label>
+        <input type="text" id="loginUser" class="input-field" placeholder="Username..." autocomplete="username">
+        <label class="lbl">Password</label>
+        <input type="password" id="loginPass" class="input-field" placeholder="Password..." autocomplete="current-password">
+        <label class="remember-row"><input type="checkbox" id="loginRemember"> Ingat saya di perangkat ini</label>
+        <div id="loginError"></div>
+        <button class="btn btn-lime" style="width:100%; padding:9px;" id="loginBtn">MASUK</button>
+        <button class="link-btn" id="btnGoActivate">🔑 Aktivasi / perpanjang lisensi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ADD-ON: SCRIPT LISENSI, LOGIN, AKSEN WARNA, SETTINGS HORIZONTAL ===== -->
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+
+    /* Public key pemilik sistem (hanya untuk MEMVERIFIKASI lisensi; tidak bisa dipakai membuat lisensi). */
+    const OWNER_PUBLIC_KEY = {"kty":"EC","crv":"P-256","x":"YmeVNJ1LZlgp4kLGshHZA1LV3GXwoZ31edgMmvZG5ck","y":"3w0pG86avye1vwj-zbi49E3xxoFOnSPz0nz3pUb5BSE"};
+
+    const K = { LIC: 'GALATAMA_LICENSE_CODE', SESS: 'GALATAMA_AUTH_SESSION', SEED: 'GALATAMA_DEVICE_SEED', LAST: 'GALATAMA_LAST_SEEN', ACC: 'GALATAMA_ACCENT_COLOR', LBL: 'GALATAMA_LABEL_COLOR' };
+    const ls = {
+      get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+      del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+    };
+    const ss = {
+      get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+      set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} },
+      del(k) { try { sessionStorage.removeItem(k); } catch (e) {} }
+    };
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    /* ================= AKSEN WARNA (tidak mengubah warna teks) ================= */
+    const ACCENTS = [
+      ['#00ffb2', 'Mint (default)'], ['#00e5ff', 'Cyan'], ['#3b82f6', 'Biru'], ['#a259ff', 'Ungu'],
+      ['#ff0055', 'Pink'], ['#ff3b30', 'Merah'], ['#ff7a1a', 'Oranye'], ['#ffc107', 'Emas']
+    ];
+    const Accent = {
+      get() { return ls.get(K.ACC) || '#00ffb2'; },
+      apply(hex) {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+        const r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        const root = document.documentElement.style;
+        root.setProperty('--accent', hex);
+        root.setProperty('--accent-ink', lum > 0.55 ? '#000' : '#fff');
+        ls.set(K.ACC, hex);
+        document.querySelectorAll('.accent-dot').forEach(d => d.classList.toggle('active', d.dataset.c.toLowerCase() === hex.toLowerCase()));
+        const p = $('accentPicker'), t = $('accentHex');
+        if (p) p.value = hex; if (t) t.value = hex;
+      }
+    };
+    window.Accent = Accent;
+
+    /* ================= WARNA TEKS JUDUL / LABEL (default putih) ================= */
+    const LABELS = [['#ffffff', 'Putih (default)'], ['#cbd5e1', 'Abu terang'], ['#ffe066', 'Kuning'], ['#7df9ff', 'Cyan muda'], ['#00ffb2', 'Mint (asli)']];
+    const LabelColor = {
+      get() { return ls.get(K.LBL) || '#ffffff'; },
+      apply(hex) {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+        document.documentElement.style.setProperty('--lime', hex);
+        ls.set(K.LBL, hex);
+        document.querySelectorAll('.label-dot').forEach(d => d.classList.toggle('active', d.dataset.c.toLowerCase() === hex.toLowerCase()));
+        const p = $('labelPicker'), t = $('labelHex');
+        if (p) p.value = hex; if (t) t.value = hex;
+      }
+    };
+    window.LabelColor = LabelColor;
+
+    /* ================= KRIPTO ================= */
+    const enc = new TextEncoder();
+    const hex = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const b64uToBytes = (s) => {
+      s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '=';
+      const bin = atob(s); const out = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out;
+    };
+    const sha256Hex = async (str) => hex(await crypto.subtle.digest('SHA-256', enc.encode(str)));
+    async function hashPass(pass, salt) {
+      const key = await crypto.subtle.importKey('raw', enc.encode(pass), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' }, key, 256);
+      return hex(bits);
+    }
+
+    /* ================= DEVICE ID ================= */
+    function gpuInfo() {
+      try {
+        const c = document.createElement('canvas');
+        const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+        if (!gl) return 'nogl';
+        const ext = gl.getExtension('WEBGL_debug_renderer_info');
+        return ext ? gl.getParameter(ext.UNMASKED_VENDOR_WEBGL) + '|' + gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : 'noext';
+      } catch (e) { return 'err'; }
+    }
+    async function getDeviceId() {
+      let seed = ls.get(K.SEED);
+      if (!seed) { seed = hex(crypto.getRandomValues(new Uint8Array(16))); ls.set(K.SEED, seed); }
+      const fp = [navigator.platform, navigator.hardwareConcurrency, navigator.deviceMemory || '', screen.colorDepth, gpuInfo()].join('~');
+      const h = (await sha256Hex(seed + '||' + fp)).substr(0, 12).toUpperCase();
+      return 'GLT-' + h.substr(0, 4) + '-' + h.substr(4, 4) + '-' + h.substr(8, 4);
+    }
+
+    /* ================= LISENSI ================= */
+    function endOfDay(dateStr) { return new Date(dateStr + 'T23:59:59').getTime(); }
+    function fmtDate(dateStr) { const [y, m, d] = dateStr.split('-'); return d + '/' + m + '/' + y; }
+
+    async function validateLicense(code, deviceId) {
+      if (!(window.crypto && crypto.subtle)) return { ok: false, error: 'Browser tidak mendukung verifikasi lisensi. Buka file lewat Chrome/Edge/Firefox terbaru (atau HTTPS).' };
+      let payloadStr, sig;
+      try {
+        const parts = code.trim().replace(/\s+/g, '').split('.');
+        if (parts.length !== 2) throw 0;
+        const pb = b64uToBytes(parts[0]); payloadStr = new TextDecoder().decode(pb); sig = b64uToBytes(parts[1]);
+      } catch (e) { return { ok: false, error: 'Format kode lisensi tidak valid.' }; }
+
+      let valid = false;
+      try {
+        const key = await crypto.subtle.importKey('jwk', OWNER_PUBLIC_KEY, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+        valid = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, sig, enc.encode(payloadStr));
+      } catch (e) { valid = false; }
+      if (!valid) return { ok: false, error: 'Kode lisensi tidak sah (bukan dari pemilik sistem).' };
+
+      let lic; try { lic = JSON.parse(payloadStr); } catch (e) { return { ok: false, error: 'Data lisensi rusak.' }; }
+
+      if (lic.d !== '*' && lic.d !== deviceId) return { ok: false, error: 'Lisensi ini terkunci untuk perangkat lain. Lisensi tidak bisa dipakai di perangkat ini.' };
+
+      const now = Date.now(), last = parseInt(ls.get(K.LAST) || '0', 10);
+      if (last && now < last - 10 * 60 * 1000) return { ok: false, error: 'Jam perangkat tidak sesuai (mundur). Perbaiki tanggal & jam perangkat, lalu muat ulang.' };
+      ls.set(K.LAST, String(Math.max(last, now)));
+
+      if (lic.e && now > endOfDay(lic.e)) return { ok: false, error: 'Masa sewa berakhir pada ' + fmtDate(lic.e) + '. Hubungi pemilik sistem untuk perpanjangan.' };
+      return { ok: true, lic };
+    }
+
+    /* ================= AUTH ================= */
+    const Auth = {
+      deviceId: '', lic: null, timer: null,
+
+      async init() {
+        if (!(window.crypto && crypto.subtle)) { this.showActivate('Browser tidak mendukung verifikasi lisensi. Gunakan Chrome/Edge/Firefox terbaru atau HTTPS.'); return; }
+        this.deviceId = await getDeviceId();
+        $('devIdText').innerText = this.deviceId;
+        const stored = ls.get(K.LIC);
+        if (!stored) return this.showActivate('');
+        const r = await validateLicense(stored, this.deviceId);
+        if (!r.ok) return this.showActivate(r.error);
+        this.lic = r.lic;
+        const sess = ss.get(K.SESS) || ls.get(K.SESS);
+        if (sess && sess === this.lic.id) return this.enter();
+        this.showLogin();
+      },
+
+      hideAll() { $('paneActivate').classList.add('hidden'); $('paneLogin').classList.add('hidden'); },
+
+      showActivate(msg) {
+        this.hideAll(); $('loginOverlay').classList.remove('hidden'); $('paneActivate').classList.remove('hidden');
+        $('activError').innerText = msg || ''; $('licenseInput').value = '';
+        $('btnBackLogin').classList.toggle('hidden', !this.lic);
+      },
+
+      showLogin() {
+        this.hideAll(); $('loginOverlay').classList.remove('hidden'); $('paneLogin').classList.remove('hidden');
+        const l = this.lic;
+        $('licInfo').innerHTML = (l.n ? '<b>' + esc(l.n) + '</b><br>' : '') + (l.e ? 'Aktif sampai <b>' + fmtDate(l.e) + '</b>' : 'Lisensi <b>permanen</b>');
+        $('loginError').innerText = ''; $('loginPass').value = '';
+        setTimeout(() => $('loginUser').focus(), 50);
+      },
+
+      async activate() {
+        const code = $('licenseInput').value;
+        if (!code.trim()) { $('activError').innerText = 'Tempel kode lisensi terlebih dahulu.'; return; }
+        const r = await validateLicense(code, this.deviceId);
+        if (!r.ok) { $('activError').innerText = r.error; return; }
+        ls.set(K.LIC, code.trim().replace(/\s+/g, ''));
+        ss.del(K.SESS); ls.del(K.SESS);
+        this.lic = r.lic; this.showLogin();
+      },
+
+      async submit() {
+        const name = $('loginUser').value.trim(), pass = $('loginPass').value;
+        const err = (m) => { $('loginError').innerText = m; };
+        if (!name || !pass) return err('Username dan password wajib diisi.');
+        const r = await validateLicense(ls.get(K.LIC) || '', this.deviceId);   // cek ulang masa sewa tiap login
+        if (!r.ok) { this.lic = null; return this.showActivate(r.error); }
+        this.lic = r.lic;
+        const ok = name.toLowerCase() === this.lic.u.toLowerCase() && (await hashPass(pass, this.lic.s)) === this.lic.p;
+        if (!ok) { await new Promise(res => setTimeout(res, 700)); return err('Username atau password salah.'); }
+        ss.set(K.SESS, this.lic.id);
+        if ($('loginRemember').checked) ls.set(K.SESS, this.lic.id);
+        this.enter();
+      },
+
+      daysLeft() { return this.lic.e ? Math.ceil((endOfDay(this.lic.e) - Date.now()) / 86400000) : null; },
+
+      enter() {
+        $('loginOverlay').classList.add('hidden');
+        $('loginPass').value = '';
+        this.refreshBadge();
+        clearInterval(this.timer);
+        this.timer = setInterval(() => this.recheck(), 30000);
+      },
+
+      refreshBadge() {
+        const badge = $('userBadge'), l = this.lic; if (!badge || !l) return;
+        const d = this.daysLeft();
+        badge.classList.toggle('warn', d !== null && d <= 7);
+        badge.innerHTML = '👤 <b>' + esc(l.u) + '</b>' + (d === null ? '' : ' · sisa ' + Math.max(d, 0) + ' hari');
+        const info = $('licSettingsInfo');
+        if (info) info.innerHTML =
+          'Penyewa: <b>' + esc(l.n || '-') + '</b><br>User: <b>' + esc(l.u) + '</b><br>' +
+          'Masa aktif: <b>' + (l.e ? fmtDate(l.e) : 'Permanen') + '</b><br>' +
+          'Device ID: <b style="font-family:var(--font-mono); color:var(--gold); user-select:text;">' + esc(this.deviceId) + '</b>';
+      },
+
+      async recheck() {
+        const r = await validateLicense(ls.get(K.LIC) || '', this.deviceId);
+        if (!r.ok) {
+          clearInterval(this.timer);
+          ['settingsModal', 'addModal', 'winnerModal', 'logModal'].forEach(id => $(id) && $(id).classList.add('hidden'));
+          this.lic = null; ss.del(K.SESS); ls.del(K.SESS); this.showActivate(r.error);
+        } else { this.lic = r.lic; this.refreshBadge(); }
+      },
+
+      logout() {
+        ss.del(K.SESS); ls.del(K.SESS); clearInterval(this.timer);
+        ['settingsModal'].forEach(id => $(id) && $(id).classList.add('hidden'));
+        $('loginUser').value = '';
+        if (this.lic) this.showLogin(); else this.showActivate('');
+      },
+
+      changeLicense() { this.logout(); this.showActivate(''); },
+
+      copyDeviceId() {
+        const t = this.deviceId, done = () => { $('btnCopyDev').innerText = 'TERSALIN ✓'; setTimeout(() => $('btnCopyDev').innerText = 'SALIN', 1500); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(() => {});
+        else { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove(); }
+      }
+    };
+    window.Auth = Auth;
+
+    /* ================= SETTINGS HORIZONTAL + AKSEN + LISENSI ================= */
+    function buildHorizontalSettings() {
+      const card = document.querySelector('#settingsModal .modal-card');
+      if (!card) return;
+      const box = card.children[1];
+      const kids = Array.from(box.children);
+      const idxColor = kids.findIndex(k => k.querySelector && k.querySelector('#customTextColorPicker'));
+      const idxBtns = kids.findIndex(k => k.querySelector && k.querySelector('[onclick*="saveClientBranding"]'));
+      if (idxColor < 0 || idxBtns < 0) return;
+
+      const mk = () => { const d = document.createElement('div'); d.className = 'settings-col'; return d; };
+      const c1 = mk(), c2 = mk(), c3 = mk();
+      kids.forEach((k, i) => { (i <= idxColor ? c1 : i <= idxBtns ? c2 : c3).appendChild(k); });
+
+      const acc = document.createElement('div');
+      acc.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      acc.innerHTML =
+        '<label style="color:var(--lime); font-weight:800; margin-top:4px;">🎨 AKSEN WARNA TEMA (BORDER, GLOW, TOMBOL):</label>' +
+        '<div class="accent-swatches" id="accentSwatches"></div>' +
+        '<div style="display:flex; gap:6px; align-items:center;">' +
+        '<input type="color" id="accentPicker" class="input-field" style="width:50px; height:32px; padding:2px; cursor:pointer;" value="#00ffb2">' +
+        '<input type="text" id="accentHex" class="input-field" style="flex:1;" value="#00ffb2" placeholder="#00FFB2"></div>';
+      c2.insertBefore(acc, kids[idxBtns]);
+
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      lbl.innerHTML =
+        '<label style="color:var(--lime); font-weight:800; margin-top:4px;">🔤 WARNA TEKS JUDUL & LABEL:</label>' +
+        '<div class="accent-swatches" id="labelSwatches"></div>' +
+        '<div style="display:flex; gap:6px; align-items:center;">' +
+        '<input type="color" id="labelPicker" class="input-field" style="width:50px; height:32px; padding:2px; cursor:pointer;" value="#ffffff">' +
+        '<input type="text" id="labelHex" class="input-field" style="flex:1;" value="#ffffff" placeholder="#FFFFFF"></div>';
+      c2.insertBefore(lbl, kids[idxBtns]);
+
+      const sec = document.createElement('div');
+      sec.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      sec.innerHTML =
+        '<label style="color:var(--lime); font-weight:800;">🔐 LISENSI & AKUN:</label>' +
+        '<div class="lic-info" id="licSettingsInfo" style="text-align:left; background:rgba(0,0,0,0.5); border:1px solid var(--border-lime); border-radius:6px; padding:8px;"></div>' +
+        '<div style="display:flex; gap:4px;">' +
+        '<button class="btn btn-dark btn-sm" style="flex:1;" onclick="Auth.changeLicense()">🔑 GANTI LISENSI</button>' +
+        '<button class="btn btn-pink btn-sm" style="flex:1;" onclick="Auth.logout()">🚪 LOGOUT</button></div>' +
+        '<hr style="border-color:var(--border-lime); margin:4px 0;">';
+      c3.insertBefore(sec, c3.firstChild);
+
+      box.className = 'settings-cols'; box.removeAttribute('style'); box.style.marginTop = '10px';
+      box.appendChild(c1); box.appendChild(c2); box.appendChild(c3);
+
+      const sw = $('accentSwatches');
+      ACCENTS.forEach(([c, n]) => {
+        const b = document.createElement('button');
+        b.className = 'accent-dot'; b.dataset.c = c; b.title = n; b.style.background = c; b.style.color = c;
+        b.onclick = () => Accent.apply(c); sw.appendChild(b);
+      });
+      const lsw = $('labelSwatches');
+      LABELS.forEach(([c, n]) => {
+        const b = document.createElement('button');
+        b.className = 'label-dot'; b.dataset.c = c; b.title = n; b.style.background = c; b.style.color = c;
+        b.onclick = () => LabelColor.apply(c); lsw.appendChild(b);
+      });
+      $('labelPicker').addEventListener('input', e => LabelColor.apply(e.target.value));
+      $('labelHex').addEventListener('input', e => { let v = e.target.value.trim(); if (v[0] !== '#') v = '#' + v; LabelColor.apply(v); });
+      $('accentPicker').addEventListener('input', e => Accent.apply(e.target.value));
+      $('accentHex').addEventListener('input', e => { let v = e.target.value.trim(); if (v[0] !== '#') v = '#' + v; Accent.apply(v); });
+    }
+
+    function addHeaderControls() {
+      const setBtn = document.querySelector('header button[onclick*="openSettingsModal"]');
+      if (!setBtn) return;
+      const badge = document.createElement('span'); badge.id = 'userBadge'; badge.className = 'user-badge';
+      setBtn.insertAdjacentElement('afterend', badge);
+      const out = document.createElement('button'); out.className = 'btn btn-pink btn-sm'; out.textContent = '🚪 LOGOUT';
+      out.onclick = () => Auth.logout(); badge.insertAdjacentElement('afterend', out);
+    }
+
+    /* ================= START ================= */
+    buildHorizontalSettings();
+    addHeaderControls();
+    Accent.apply(Accent.get());
+    LabelColor.apply(LabelColor.get());
+    $('btnActivate').addEventListener('click', () => Auth.activate());
+    $('btnCopyDev').addEventListener('click', () => Auth.copyDeviceId());
+    $('btnGoActivate').addEventListener('click', () => Auth.showActivate(''));
+    $('btnBackLogin').addEventListener('click', () => Auth.showLogin());
+    $('loginBtn').addEventListener('click', () => Auth.submit());
+    ['loginUser', 'loginPass'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') Auth.submit(); }));
+    Auth.init();
+  })();
+  </script>
+</body>
+</html>
