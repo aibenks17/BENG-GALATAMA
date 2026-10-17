@@ -1973,5 +1973,943 @@
     Auth.init();
   })();
   </script>
+
+  <!-- ===== ADD-ON: BULK PASTE PESERTA + USERNAME ROBLOX ===== -->
+  <style id="bulkStyle">
+    .player-card-username {
+      font-size: 8px; font-weight: 800; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 115px; line-height: 1.1; margin-top: -3px;
+      color: var(--custom-text-color); opacity: .78;
+      text-shadow: 1.5px 1.5px 0 #000, -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000;
+    }
+    .podium-username { font-size: 8.5px; font-weight: 800; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: -1px; }
+    #bulkInput { min-height: 150px; font-family: var(--font-mono); font-size: 10px; user-select: text; resize: vertical; }
+    .bulk-preview { max-height: 170px; overflow-y: auto; border: 1px solid var(--border-lime); border-radius: 6px; background: rgba(0,0,0,0.5); }
+    .bulk-row { display: grid; grid-template-columns: 22px 1fr 1fr 70px; gap: 6px; padding: 4px 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 9px; align-items: center; }
+    .bulk-row:last-child { border-bottom: none; }
+    .bulk-row .no { color: var(--text-muted); font-family: var(--font-mono); }
+    .bulk-row .st-ok { color: var(--lime); font-weight: 900; text-align: right; }
+    .bulk-row .st-dup { color: var(--gold); font-weight: 900; text-align: right; }
+    .bulk-row .nm, .bulk-row .un { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bulk-row .un { color: var(--text-muted); }
+    .bulk-hint { font-size: 9px; color: var(--text-muted); line-height: 1.55; background: rgba(0,0,0,0.4); border: 1px dashed var(--border-lime); border-radius: 6px; padding: 7px 9px; }
+    .bulk-hint code { font-family: var(--font-mono); color: var(--gold); }
+  </style>
+
+  <div class="modal-overlay hidden" id="bulkModal">
+    <div class="modal-card" style="width:600px;">
+      <div class="card-title">
+        <span>📋 BULK PASTE PESERTA (ROBLOX)</span>
+        <button class="btn btn-pink btn-sm" onclick="Bulk.close()">X</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <div class="bulk-hint">
+          Satu peserta per baris, <b>Display Name dulu, lalu Username</b>. Format yang didukung:<br>
+          <code>Budi Gaming (@budi_123)</code> &nbsp;·&nbsp; <code>Budi Gaming, budi_123</code> &nbsp;·&nbsp; <code>Budi Gaming @budi_123</code><br>
+          Bisa juga tempel langsung dari Excel/Sheets (2 kolom). Baris tanpa username tetap diterima (hanya Display Name).
+        </div>
+        <textarea id="bulkInput" class="input-field" placeholder="Tempel daftar peserta di sini..." oninput="Bulk.preview()"></textarea>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <label style="color:var(--lime); font-weight:800; white-space:nowrap;">TIPE:</label>
+          <select id="bulkType" class="input-field" style="flex:1;">
+            <option value="FIXED">FIXED</option>
+            <option value="RANDOM">RANDOM</option>
+          </select>
+          <span id="bulkCount" style="font-family:var(--font-mono); font-weight:900; color:var(--gold); white-space:nowrap;">0 peserta</span>
+        </div>
+        <div class="bulk-preview" id="bulkPreview"><div style="padding:10px; color:var(--text-muted); text-align:center;">Preview akan muncul di sini.</div></div>
+        <button class="btn btn-lime btn-sm" style="width:100%; padding:8px;" id="bulkSaveBtn" onclick="Bulk.save()">TAMBAHKAN PESERTA</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const cleanUser = (s) => String(s || '').trim().replace(/^@+/, '').replace(/[^A-Za-z0-9_.]/g, '');
+    // buang karakter yang bisa merusak tampilan/onclick bawaan sistem
+    const cleanName = (s) => String(s || '').replace(/'/g, '’').replace(/[<>"`\\]/g, '').replace(/\s+/g, ' ').trim();
+    const U = '[A-Za-z0-9_.]+';
+
+    function parseLine(line) {
+      line = line.replace(/\u00a0/g, ' ').trim();
+      if (!line) return null;
+      let m, name = line, user = '';
+      if ((m = line.match(new RegExp('^(.*?)\\s*[\\(\\[]\\s*@?(' + U + ')\\s*[\\)\\]]\\s*$')))) { name = m[1]; user = m[2]; }
+      else if ((m = line.match(new RegExp('^(.*?)\\s*[\\t,;|]\\s*@?(' + U + ')\\s*$')))) { name = m[1]; user = m[2]; }
+      else if ((m = line.match(new RegExp('^(.*?)\\s+@(' + U + ')\\s*$')))) { name = m[1]; user = m[2]; }
+      name = cleanName(name); user = cleanUser(user);
+      if (!name && user) name = user;
+      if (!name) return null;
+      return { name, user };
+    }
+
+    const keyOf = (p) => ((p.username || p.user || p.name) + '').toLowerCase();
+
+    function analyze() {
+      const lines = $('bulkInput').value.split(/\r?\n/);
+      const seen = new Set((App.state.participants || []).map(p => keyOf(p)));
+      const rows = [];
+      lines.forEach(l => {
+        const r = parseLine(l); if (!r) return;
+        const k = keyOf(r);
+        r.dup = seen.has(k); seen.add(k);
+        rows.push(r);
+      });
+      return rows;
+    }
+
+    const Bulk = {
+      open() { $('bulkInput').value = ''; this.preview(); App.openModal('bulkModal'); setTimeout(() => $('bulkInput').focus(), 50); },
+      close() { App.closeModal('bulkModal'); },
+      preview() {
+        const rows = analyze(), ok = rows.filter(r => !r.dup).length, dup = rows.length - ok;
+        $('bulkCount').innerText = ok + ' peserta' + (dup ? ' · ' + dup + ' duplikat' : '');
+        $('bulkSaveBtn').innerText = ok ? 'TAMBAHKAN ' + ok + ' PESERTA' : 'TAMBAHKAN PESERTA';
+        $('bulkPreview').innerHTML = rows.length
+          ? rows.slice(0, 300).map((r, i) =>
+              '<div class="bulk-row"><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(r.name) + '</span>' +
+              '<span class="un">' + (r.user ? '@' + esc(r.user) : '—') + '</span>' +
+              '<span class="' + (r.dup ? 'st-dup' : 'st-ok') + '">' + (r.dup ? 'DUPLIKAT' : 'OK') + '</span></div>').join('') +
+            (rows.length > 300 ? '<div style="padding:6px; text-align:center; color:var(--text-muted);">… dan ' + (rows.length - 300) + ' baris lainnya</div>' : '')
+          : '<div style="padding:10px; color:var(--text-muted); text-align:center;">Preview akan muncul di sini.</div>';
+      },
+      save() {
+        const rows = analyze().filter(r => !r.dup);
+        if (!rows.length) return alert('Tidak ada peserta baru untuk ditambahkan.');
+        const type = $('bulkType').value, stamp = Date.now();
+        rows.forEach((r, i) => {
+          App.state.participants.push({
+            id: 'p_' + stamp + '_' + i, name: r.name, username: r.user || '',
+            avatar: DEFAULT_AVATAR + encodeURIComponent(r.user || r.name), type,
+            status: 'ACTIVE', present: true, isPaid: false, totalScore: 0, roundCatches: [], historyLog: []
+          });
+        });
+        App.saveStorage(); App.renderAll(); this.close();
+      }
+    };
+    window.Bulk = Bulk;
+
+    /* ---------- Tampilkan @username di kartu leaderboard + cari berdasarkan username ---------- */
+    const origRender = App.renderPeserta;
+    App.renderPeserta = function () {
+      const inp = $('searchPeserta');
+      const raw = inp ? inp.value : '', q = raw.trim().toLowerCase();
+      let s = 0, e = 0;
+      if (inp && q) { s = inp.selectionStart; e = inp.selectionEnd; inp.value = ''; }   // biar filter bawaan tidak membuang kartu yang cocok via username
+      origRender.apply(this, arguments);
+      if (inp && q) { inp.value = raw; try { inp.setSelectionRange(s, e); } catch (x) {} }
+      document.querySelectorAll('#playerGridContainer .player-card-box').forEach(card => {
+        const m = (card.getAttribute('onclick') || '').match(/selectParticipant\('([^']+)'/);
+        const p = m && App.state.participants.find(x => x.id === m[1]);
+        if (!p) return;
+        if (p.username) {
+          const nm = card.querySelector('.player-card-name');
+          if (nm) {
+            const u = document.createElement('div');
+            u.className = 'player-card-username'; u.textContent = '@' + p.username; u.title = '@' + p.username;
+            nm.insertAdjacentElement('afterend', u);
+          }
+        }
+        if (q && !(((p.name || '') + ' ' + (p.username || '')).toLowerCase().includes(q))) card.style.display = 'none';
+      });
+    };
+
+    /* ---------- Podium pemenang ---------- */
+    const origWin = App.announceWinners;
+    App.announceWinners = function () {
+      origWin.apply(this, arguments);
+      const grid = $('winnerPodiumGrid'); if (!grid) return;
+      const sorted = [...App.state.participants].sort((a, b) => b.totalScore - a.totalScore);
+      const order = [sorted[1], sorted[0], sorted[2]].filter(Boolean);   // urutan tampil: juara 2, 1, 3
+      Array.from(grid.children).forEach((card, i) => {
+        const p = order[i]; if (!p || !p.username) return;
+        const nm = card.querySelector('div[style*="text-overflow"]');
+        if (nm) { const u = document.createElement('div'); u.className = 'podium-username'; u.textContent = '@' + p.username; nm.insertAdjacentElement('afterend', u); }
+      });
+    };
+
+    /* ---------- Tambah peserta tunggal: kolom username ---------- */
+    const nameIn = $('newPesertaName');
+    if (nameIn) {
+      const ui = document.createElement('input');
+      ui.type = 'text'; ui.id = 'newPesertaUsername'; ui.className = 'input-field';
+      ui.placeholder = 'Username Roblox (opsional, tanpa @)...';
+      nameIn.insertAdjacentElement('afterend', ui);
+    }
+    const origAdd = App.addPeserta;
+    App.addPeserta = function () {
+      const u = cleanUser(($('newPesertaUsername') || {}).value);
+      const before = this.state.participants.length;
+      origAdd.apply(this, arguments);
+      if (this.state.participants.length > before && u) {
+        this.state.participants[this.state.participants.length - 1].username = u;
+        this.saveStorage(); this.renderAll();
+      }
+      if ($('newPesertaUsername')) $('newPesertaUsername').value = '';
+    };
+
+    /* ---------- Detail peserta: edit username ---------- */
+    const origDetail = App.showPlayerDetail;
+    App.showPlayerDetail = function (id) {
+      origDetail.apply(this, arguments);
+      const p = App.state.participants.find(x => x.id === id);
+      const nameInput = $('editNameInput_' + id);
+      if (!p || !nameInput) return;
+      const row = document.createElement('div');
+      row.style.cssText = 'margin-bottom:4px;';
+      row.innerHTML = '<input type="text" id="editUserInput_' + esc(id) + '" class="input-field" placeholder="Username Roblox (tanpa @)..." value="' + esc(p.username || '') + '" style="padding:3px 6px;">';
+      nameInput.parentElement.insertAdjacentElement('afterend', row);
+    };
+    const origUpd = App.updateParticipantName;
+    App.updateParticipantName = function (id) {
+      const ui = $('editUserInput_' + id), p = App.state.participants.find(x => x.id === id);
+      if (ui && p) p.username = cleanUser(ui.value);
+      return origUpd.apply(this, arguments);
+    };
+
+    /* ---------- Tombol Bulk Paste di sidebar ---------- */
+    const addBtn = document.querySelector('button[onclick*="App.openAddModal"]');
+    if (addBtn) {
+      const b = document.createElement('button');
+      b.className = 'btn btn-gold btn-sm'; b.style.cssText = 'width:100%; margin-bottom:6px;';
+      b.textContent = '📋 BULK PASTE PESERTA'; b.onclick = () => Bulk.open();
+      addBtn.insertAdjacentElement('beforebegin', b);
+    }
+    App.renderPeserta();
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: DAFTAR HADIAH + SWITCHER LEADERBOARD (VERTICAL / HORIZONTAL) ===== -->
+  <style id="prizeStyle">
+    .lb-title-row { gap: 10px; }
+    .lb-title-row > span:first-child { white-space: nowrap; }
+    .lb-tools { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .prize-pill { display: inline-flex; align-items: center; gap: 6px; flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 2px 12px; border: 1px solid var(--gold); border-radius: 99px; background: rgba(255,193,7,0.12); color: var(--gold); font-weight: 900; font-size: 9px; cursor: pointer; text-shadow: none; }
+    .prize-pill:hover { background: rgba(255,193,7,0.25); }
+    #prizePillText { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s; }
+    .lb-switch { display: inline-flex; flex-shrink: 0; border: 1px solid var(--border-lime); border-radius: 6px; overflow: hidden; }
+    .lb-sw-btn { background: transparent; border: none; color: var(--text-muted); padding: 3px 9px; font-size: 8.5px; font-weight: 900; cursor: pointer; letter-spacing: .3px; }
+    .lb-sw-btn.active { background: var(--acc-20); color: #fff; }
+
+    /* ---- Leaderboard VERTICAL ---- */
+    .player-grid-container.vmode { grid-template-columns: repeat(var(--v-cols, 1), minmax(0, 1fr)) !important; grid-template-rows: repeat(var(--v-rows, 10), minmax(42px, 1fr)) !important; grid-auto-flow: column; gap: 6px !important; overflow-y: auto !important; }
+    .player-grid-container.vmode[data-vcols="1"] { max-width: 760px; width: 100%; margin: 0 auto; }
+    .vmode .player-card-box { display: grid !important; grid-template-columns: 66px 36px minmax(0, 1fr) auto auto; grid-template-rows: auto auto; align-items: center; column-gap: 10px; row-gap: 0; height: auto !important; padding: 4px 10px !important; clip-path: none !important; border-radius: 8px; }
+    .vmode .player-card-box > div:first-child { grid-column: 1; grid-row: 1 / 3; flex-direction: column; align-items: flex-start !important; gap: 2px; width: auto !important; }
+    .vmode .player-card-avatar { grid-column: 2; grid-row: 1 / 3; width: 34px; height: 34px; }
+    .vmode .player-card-name { grid-column: 3; grid-row: 1; max-width: none; text-align: left; align-self: end; font-size: 11px; }
+    .vmode .player-card-username { grid-column: 3; grid-row: 2; max-width: none; text-align: left; align-self: start; margin: 0; }
+    .vmode .player-card-box:not(.has-user) .player-card-name { grid-row: 1 / 3; align-self: center; }
+    .vmode .player-card-score { grid-column: 4; grid-row: 1 / 3; font-size: 15px; min-width: 70px; text-align: right; }
+    .vmode .player-card-box > div:last-child { grid-column: 5; grid-row: 1 / 3; width: auto !important; margin-top: 0 !important; }
+
+    /* ---- Hadiah ---- */
+    .podium-prize { margin-top: 4px; font-size: 9px; font-weight: 900; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .winner-extra { display: flex; flex-direction: column; gap: 4px; max-height: 130px; overflow-y: auto; margin: 4px 0 10px; text-align: left; }
+    .we-row { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; padding: 4px 8px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-lime); border-radius: 5px; font-size: 10px; }
+    .we-rank { color: var(--gold); font-weight: 900; font-family: var(--font-mono); }
+    .we-name { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .we-name i { color: var(--text-muted); font-style: normal; font-weight: 700; margin-left: 4px; }
+    .we-prize { color: var(--gold); font-weight: 900; }
+    .prize-row { display: grid; grid-template-columns: 36px 1fr; gap: 8px; align-items: center; padding: 8px 10px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-lime); border-radius: 6px; }
+    .prize-row .pr-rank { font-size: 18px; text-align: center; }
+    .prize-row .pr-name { font-weight: 900; font-size: 12px; color: #fff; }
+    .prize-row .pr-sub { font-size: 8px; color: var(--gold); font-weight: 800; letter-spacing: .5px; }
+  </style>
+
+  <div class="modal-overlay hidden" id="prizeModal" onclick="if(event.target===this) App.closeModal('prizeModal')">
+    <div class="modal-card" style="width:380px;">
+      <div class="card-title">
+        <span>🎁 DAFTAR HADIAH</span>
+        <button class="btn btn-pink btn-sm" onclick="App.closeModal('prizeModal')">X</button>
+      </div>
+      <div id="prizeModalList" style="display:flex; flex-direction:column; gap:6px; margin-top:10px; max-height:60vh; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const LB_KEY = 'GALATAMA_LB_MODE';
+    const MEDALS = ['🥇', '🥈', '🥉'];
+    const medal = (i) => MEDALS[i] || '🏅';
+
+    /* Muat hadiah dari penyimpanan (loadStorage bawaan hanya memuat kunci tertentu) */
+    try {
+      const saved = JSON.parse(localStorage.getItem('GALATAMA_V6_HORIZONTAL') || 'null');
+      if (saved && saved.prizes) App.state.prizes = saved.prizes;
+    } catch (e) {}
+    if (!App.state.prizes) App.state.prizes = { items: [], display: 'ticker' };
+    const items = () => ((App.state.prizes && App.state.prizes.items) || []);
+
+    /* ================= HADIAH: PENGATURAN ================= */
+    const col1 = document.querySelector('#settingsModal .settings-col');
+    if (col1) {
+      const box = document.createElement('div');
+      box.style.cssText = 'display:flex; flex-direction:column; gap:6px;';
+      box.innerHTML =
+        '<label style="color:var(--gold); font-weight:800; margin-top:4px;">🎁 DAFTAR HADIAH (JUARA 1, 2, 3, ...):</label>' +
+        '<textarea id="prizeInput" class="input-field" rows="5" style="font-size:10px;" placeholder="100 Robux&#10;50 Robux&#10;25 Robux"></textarea>' +
+        '<div style="font-size:8.5px; color:var(--text-muted); line-height:1.4;">Satu hadiah per baris: baris 1 = Juara 1, baris 2 = Juara 2, dst. Tersimpan otomatis.</div>' +
+        '<label style="color:var(--gold); font-weight:800;">👁️ TAMPIL SAAT LOMBA BERJALAN:</label>' +
+        '<select id="prizeDisplay" class="input-field">' +
+        '<option value="ticker">Ticker berputar (hemat tempat)</option>' +
+        '<option value="button">Tombol 🎁 saja</option>' +
+        '<option value="hidden">Sembunyikan (muncul saat WINNERS saja)</option></select>';
+      col1.appendChild(box);
+      $('prizeInput').addEventListener('input', savePrizes);
+      $('prizeDisplay').addEventListener('change', savePrizes);
+    }
+    function savePrizes() {
+      App.state.prizes = {
+        items: $('prizeInput').value.split(/\r?\n/).map(s => s.replace(/^\s*juara\s*\d+\s*[:.\-)]?\s*/i, '').trim()).filter(Boolean),
+        display: $('prizeDisplay').value
+      };
+      App.saveStorage(); renderPrizeUI();
+    }
+    const origSet = App.openSettingsModal;
+    App.openSettingsModal = function () {
+      origSet.apply(this, arguments);
+      if ($('prizeInput')) { $('prizeInput').value = items().join('\n'); $('prizeDisplay').value = App.state.prizes.display || 'ticker'; }
+    };
+
+    /* ================= HADIAH: TAMPIL SAAT LOMBA ================= */
+    const titleRow = $('playerGridContainer').previousElementSibling;
+    titleRow.classList.add('lb-title-row');
+    const titleSpan = titleRow.firstElementChild;
+    const tools = document.createElement('div');
+    tools.className = 'lb-tools';
+    tools.innerHTML =
+      '<div class="prize-pill" id="prizePill" title="Klik untuk lihat daftar hadiah">🎁 <span id="prizePillText"></span></div>' +
+      '<div class="lb-switch"><button class="lb-sw-btn" data-m="H">▦ HORIZONTAL</button><button class="lb-sw-btn" data-m="V">☰ VERTICAL</button></div>';
+    titleSpan.insertAdjacentElement('afterend', tools);
+
+    let tIdx = 0, tTimer = null;
+    const tickLabel = (i) => medal(i) + ' JUARA ' + (i + 1) + ' · ' + items()[i];
+    function renderPrizeUI() {
+      clearInterval(tTimer);
+      const pill = $('prizePill'), txt = $('prizePillText'), it = items(), disp = (App.state.prizes || {}).display || 'ticker';
+      if (!it.length || disp === 'hidden') { pill.style.display = 'none'; return; }
+      pill.style.display = 'inline-flex';
+      if (disp === 'button') { txt.textContent = 'HADIAH'; txt.style.opacity = 1; return; }
+      tIdx = 0; txt.textContent = tickLabel(0); txt.style.opacity = 1; tIdx = 1;
+      if (it.length > 1) tTimer = setInterval(() => {
+        const n = items().length; if (!n) return;
+        const i = tIdx % n; txt.style.opacity = 0;
+        setTimeout(() => { txt.textContent = tickLabel(i); txt.style.opacity = 1; }, 180);
+        tIdx++;
+      }, 3500);
+    }
+    $('prizePill').addEventListener('click', () => {
+      const it = items();
+      $('prizeModalList').innerHTML = it.map((p, i) =>
+        '<div class="prize-row"><div class="pr-rank">' + medal(i) + '</div><div><div class="pr-sub">JUARA ' + (i + 1) + '</div><div class="pr-name">' + esc(p) + '</div></div></div>').join('');
+      App.openModal('prizeModal');
+    });
+
+    /* ================= HADIAH: SAAT WINNERS ================= */
+    const origWin = App.announceWinners;
+    App.announceWinners = function () {
+      origWin.apply(this, arguments);
+      const grid = $('winnerPodiumGrid'); if (!grid) return;
+      const old = $('winnerPrizeExtra'); if (old) old.remove();
+      const it = items(); if (!it.length) return;
+      const sorted = [...App.state.participants].sort((a, b) => b.totalScore - a.totalScore);
+      const rankIdx = [1, 0, 2].filter(i => sorted[i]);               // urutan tampil: juara 2, 1, 3
+      Array.from(grid.children).forEach((card, k) => {
+        const r = rankIdx[k];
+        if (r === undefined || !it[r]) return;
+        const d = document.createElement('div');
+        d.className = 'podium-prize'; d.textContent = '🎁 ' + it[r]; d.title = it[r];
+        card.appendChild(d);
+      });
+      const last = Math.min(it.length, sorted.length);
+      if (last > 3) {
+        const ex = document.createElement('div'); ex.id = 'winnerPrizeExtra'; ex.className = 'winner-extra';
+        for (let i = 3; i < last; i++) {
+          const p = sorted[i];
+          ex.insertAdjacentHTML('beforeend',
+            '<div class="we-row"><span class="we-rank">#' + (i + 1) + '</span><span class="we-name">' + esc(p.name) + (p.username ? '<i>@' + esc(p.username) + '</i>' : '') + '</span><span class="we-prize">🎁 ' + esc(it[i]) + '</span></div>');
+        }
+        grid.insertAdjacentElement('afterend', ex);
+      }
+    };
+
+    /* ================= SWITCHER LEADERBOARD ================= */
+    const getMode = () => { try { return localStorage.getItem(LB_KEY) === 'V' ? 'V' : 'H'; } catch (e) { return 'H'; } };
+    function updateVars() {
+      const c = $('playerGridContainer');
+      const n = Math.max(1, Array.from(c.querySelectorAll('.player-card-box')).filter(x => x.style.display !== 'none').length);
+      const cols = n <= 10 ? 1 : n <= 26 ? 2 : 3;
+      c.style.setProperty('--v-cols', cols); c.style.setProperty('--v-rows', Math.ceil(n / cols)); c.dataset.vcols = cols;
+    }
+    function applyLayout() {
+      const c = $('playerGridContainer'), m = getMode();
+      c.classList.toggle('vmode', m === 'V');
+      document.querySelectorAll('.lb-sw-btn[data-m]').forEach(b => b.classList.toggle('active', b.dataset.m === m));
+      titleSpan.textContent = 'GRID PESERTA & KLASEMEN (' + (m === 'V' ? 'VERTICAL' : 'HORIZONTAL') + ')';
+      if (m === 'V') updateVars(); else { c.style.removeProperty('--v-cols'); c.style.removeProperty('--v-rows'); c.removeAttribute('data-vcols'); }
+    }
+    document.querySelectorAll('.lb-sw-btn[data-m]').forEach(b => b.addEventListener('click', () => {
+      try { localStorage.setItem(LB_KEY, b.dataset.m); } catch (e) {}
+      applyLayout();
+    }));
+    const origRender = App.renderPeserta;
+    App.renderPeserta = function () {
+      origRender.apply(this, arguments);
+      document.querySelectorAll('#playerGridContainer .player-card-box').forEach(card =>
+        card.classList.toggle('has-user', !!card.querySelector('.player-card-username')));
+      if ($('playerGridContainer').classList.contains('vmode')) updateVars();
+    };
+
+    renderPrizeUI();
+    applyLayout();
+    App.renderPeserta();
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: LELANG SLOT (BID / BIN + BONUS POIN AWAL) ===== -->
+  <style id="auctionStyle">
+    #auctionModal .modal-card { width: min(760px, 96vw); max-height: 92vh; overflow-y: auto; }
+    .auc-row { display: grid; grid-template-columns: 20px minmax(0,1fr) 92px 44px minmax(0,1.3fr) 64px; gap: 6px; padding: 4px 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 9px; align-items: center; }
+    .auc-row:last-child { border-bottom: none; }
+    .auc-row.head { position: sticky; top: 0; background: #0a1020; color: var(--text-muted); font-weight: 900; font-size: 8px; letter-spacing: .5px; z-index: 1; }
+    .auc-row .no { color: var(--text-muted); font-family: var(--font-mono); }
+    .auc-row .c { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .auc-row .c i { color: var(--text-muted); font-style: normal; margin-left: 3px; }
+    .auc-tag { padding: 1px 6px; border-radius: 3px; font-weight: 900; font-size: 8px; }
+    .auc-tag.bin { background: rgba(255,193,7,0.2); color: var(--gold); }
+    .auc-tag.bid { background: rgba(255,255,255,0.1); color: #fff; }
+    .auc-ok { color: var(--lime); font-weight: 900; text-align: right; }
+    .auc-dup { color: var(--gold); font-weight: 900; text-align: right; }
+    .auc-err { color: var(--pink); font-weight: 900; text-align: right; }
+    .auc-bonus { font-family: var(--font-mono); font-weight: 900; color: var(--gold); }
+    #aucInput { min-height: 120px; font-family: var(--font-mono); font-size: 10px; user-select: text; resize: vertical; }
+    .auc-sum { font-size: 9px; font-weight: 800; color: var(--text-muted); }
+    .auc-sum b { color: var(--gold); }
+    .podium-tiktok { font-size: 8.5px; font-weight: 800; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+
+  <div class="modal-overlay hidden" id="auctionModal">
+    <div class="modal-card">
+      <div class="card-title">
+        <span>🔨 LELANG SLOT & INFO LAYAR STREAM</span>
+        <button class="btn btn-pink btn-sm" onclick="Auction.close()">X</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <label style="color:var(--gold); font-weight:800;">⭐ BONUS POIN AWAL BIN (default):</label>
+          <input type="number" id="aucDefaultBonus" class="input-field" style="width:80px;" min="0" step="1" value="2">
+          <span style="font-size:9px; color:var(--text-muted);">dipakai kalau baris BIN tidak menulis bonus sendiri</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:flex-end; padding:8px; border:1px dashed var(--border-lime); border-radius:6px; background:rgba(0,0,0,0.3);">
+          <div style="flex:2 1 170px;"><label style="font-size:8px; color:var(--lime); font-weight:900;">JUDUL SESI (TAMPIL DI LAYAR STREAM)</label><input type="text" id="aucTitle" class="input-field" placeholder="SESI 1 (SABTU)"></div>
+          <div style="flex:0 1 70px;"><label style="font-size:8px; color:var(--lime); font-weight:900;">JML SLOT</label><input type="number" id="aucSlots" class="input-field" min="1" max="60" placeholder="20"></div>
+          <div style="flex:0 1 70px;"><label style="font-size:8px; color:var(--lime); font-weight:900;">OB</label><input type="text" id="aucOB" class="input-field" placeholder="-"></div>
+          <div style="flex:0 1 70px;"><label style="font-size:8px; color:var(--lime); font-weight:900;">NB</label><input type="text" id="aucNB" class="input-field" placeholder="1"></div>
+          <div style="flex:0 1 80px;"><label style="font-size:8px; color:var(--lime); font-weight:900;">HARGA BIN</label><input type="text" id="aucBIN" class="input-field" placeholder="90"></div>
+          <div style="flex:1 1 100%;"><label style="font-size:8px; color:var(--lime); font-weight:900;">MAP</label><input type="text" id="aucMap" class="input-field" placeholder="MAP OBSERVATORIUM"></div>
+          <div style="flex:1 1 100%;"><label style="font-size:8px; color:var(--lime); font-weight:900;">TARGET TIAP ROUND (1 baris = 1 round, round aktif otomatis menyala)</label>
+            <textarea id="aucTargets" class="input-field" rows="5" style="min-height:70px; font-size:10px;" placeholder="COMBO KING&#10;PRISMALLUNE + WC BINARY&#10;WC GLITCH + WC BINARY"></textarea></div>
+        </div>
+        <div class="bulk-hint">
+          Satu slot per baris: <b>nama TikTok, bid / BIN, [bonus], displayname</b><br>
+          <code>@budi_tt, BIN 500, +3, Budi Gaming (@budi_rbx)</code> → BIN, bonus +3<br>
+          <code>joko_live, BIN 800, Joko</code> → BIN, bonus pakai default di atas<br>
+          <code>siti.tt, 300, Siti Roblox</code> → BID biasa, tanpa bonus<br>
+          Bonus juga bisa ditulis di kolom nilai: <code>rani, BIN 1000 +2, Rani R</code>. Pemisah: koma, <code>|</code>, <code>;</code> atau tab (tempel dari Excel). Username Roblox opsional di dalam kurung. <b>Ctrl+Enter</b> = masukkan cepat.
+        </div>
+        <textarea id="aucInput" class="input-field" placeholder="Tempel hasil lelang di sini..." oninput="Auction.preview()"></textarea>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <label style="color:var(--lime); font-weight:800;">TIPE:</label>
+          <select id="aucType" class="input-field" style="width:110px;"><option value="FIXED">FIXED</option><option value="RANDOM">RANDOM</option></select>
+          <label class="remember-row" style="margin:0;"><input type="checkbox" id="aucPaid"> Tandai sudah bayar (PAY)</label>
+          <span id="aucCount" style="margin-left:auto; font-family:var(--font-mono); font-weight:900; color:var(--gold);">0 slot</span>
+        </div>
+        <div class="bulk-preview" id="aucPreview" style="max-height:200px;"><div style="padding:10px; color:var(--text-muted); text-align:center;">Preview akan muncul di sini.</div></div>
+        <button class="btn btn-lime btn-sm" style="width:100%; padding:8px;" id="aucSaveBtn" onclick="Auction.save()">MASUKKAN KE PESERTA</button>
+
+        <div style="border-top:1px dashed var(--border-lime); padding-top:10px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="color:var(--lime); font-weight:800;">📋 CATATAN LELANG</label>
+            <span class="auc-sum" id="aucSummary"></span>
+          </div>
+          <div class="bulk-preview" id="aucRecords" style="max-height:170px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const cleanUser = (s) => String(s || '').trim().replace(/^@+/, '').replace(/[^A-Za-z0-9_.]/g, '');
+    const cleanName = (s) => String(s || '').replace(/'/g, '’').replace(/[<>"`\\]/g, '').replace(/\s+/g, ' ').trim();
+    const U = '[A-Za-z0-9_.]+';
+
+    /* Muat data lelang dari penyimpanan (loadStorage bawaan hanya memuat kunci tertentu) */
+    try {
+      const saved = JSON.parse(localStorage.getItem('GALATAMA_V6_HORIZONTAL') || 'null');
+      if (saved && saved.auction) App.state.auction = saved.auction;
+    } catch (e) {}
+    if (!App.state.auction) App.state.auction = { defaultBonus: 2, entries: [] };
+    if (!App.state.auction.session) App.state.auction.session = { title: 'SESI 1', map: '', slots: 20, ob: '', nb: '', bin: '', targets: '' };
+    const A = () => App.state.auction;
+
+    /* "Displayname (@usernameRoblox)" -> {name, user} */
+    function parseName(s) {
+      s = String(s || '').trim(); let m, name = s, user = '';
+      if ((m = s.match(new RegExp('^(.*?)\\s*[\\(\\[]\\s*@?(' + U + ')\\s*[\\)\\]]\\s*$')))) { name = m[1]; user = m[2]; }
+      else if ((m = s.match(new RegExp('^(.*?)\\s+@(' + U + ')\\s*$')))) { name = m[1]; user = m[2]; }
+      return { name: cleanName(name), user: cleanUser(user) };
+    }
+    const isBonusTok = (s) => /^\+?\d{1,3}$/.test(String(s).trim());
+    const bonusOf = (s) => parseInt(String(s).replace('+', ''), 10) || 0;
+
+    function parseLine(line, defBonus) {
+      line = line.replace(/\u00a0/g, ' ').trim(); if (!line) return null;
+      const f = line.split(/\s*(?:[|\t;,])\s*/).map(x => x.trim()).filter(x => x.length);
+      if (f.length < 2) return { raw: line, error: 'Min: nama TikTok & nilai' };
+      const tiktok = cleanUser(f[0]);
+      if (!tiktok) return { raw: line, error: 'Nama TikTok kosong' };
+
+      let amt = f[1], bonus = null;
+      const inl = amt.match(/\+\s*(\d{1,3})\b/);
+      if (inl) { bonus = parseInt(inl[1], 10); amt = amt.replace(inl[0], ''); }
+      const isBin = /\bbin\b/i.test(amt) || /^bin/i.test(amt);
+      amt = amt.replace(/\bbin\b/ig, '').replace(/^bin/i, '').replace(/\bbid\b/ig, '').trim();
+
+      let rest = f.slice(2), dispRaw = '';
+      if (rest.length && isBonusTok(rest[0]) && bonus === null) { bonus = bonusOf(rest[0]); rest = rest.slice(1); }
+      else if (rest.length === 1 && isBonusTok(rest[0]) && bonus !== null) { rest = []; }
+      dispRaw = rest.join(', ');
+      const pn = parseName(dispRaw || tiktok);
+      let nm = pn.name || cleanName(tiktok);
+      if (!nm) return { raw: line, error: 'Displayname kosong' };
+
+      if (bonus === null) bonus = isBin ? defBonus : 0;
+      return { raw: line, tiktok, type: isBin ? 'BIN' : 'BID', amount: amt, bonus, name: nm, user: pn.user };
+    }
+
+    const keyOf = (name, user) => ((user || name) + '').toLowerCase();
+    function analyze() {
+      const def = Math.max(0, parseInt($('aucDefaultBonus').value, 10) || 0);
+      const seen = new Set((App.state.participants || []).map(p => keyOf(p.name, p.username)));
+      return $('aucInput').value.split(/\r?\n/).map(l => parseLine(l, def)).filter(Boolean).map(r => {
+        if (!r.error) { const k = keyOf(r.name, r.user); r.dup = seen.has(k); seen.add(k); }
+        return r;
+      });
+    }
+
+    function renderRecords() {
+      const list = A().entries || [];
+      const bin = list.filter(e => e.type === 'BIN').length;
+      $('aucSummary').innerHTML = list.length ? 'Total <b>' + list.length + '</b> slot · BIN <b>' + bin + '</b> · BID <b>' + (list.length - bin) + '</b>' : '';
+      $('aucRecords').innerHTML = list.length
+        ? '<div class="auc-row head" style="grid-template-columns:20px minmax(0,1fr) 92px 44px minmax(0,1.3fr) 30px;"><span>#</span><span>TIKTOK</span><span>TIPE / NILAI</span><span>BONUS</span><span>DISPLAYNAME</span><span></span></div>' +
+          list.map((e, i) =>
+            '<div class="auc-row" style="grid-template-columns:20px minmax(0,1fr) 92px 44px minmax(0,1.3fr) 30px;">' +
+            '<span class="no">' + (i + 1) + '</span><span class="c">@' + esc(e.tiktok) + '</span>' +
+            '<span class="c"><span class="auc-tag ' + e.type.toLowerCase() + '">' + e.type + '</span> ' + esc(e.amount) + '</span>' +
+            '<span class="auc-bonus">' + (e.bonus ? '+' + e.bonus : '—') + '</span>' +
+            '<span class="c">' + esc(e.name) + (e.username ? '<i>@' + esc(e.username) + '</i>' : '') + '</span>' +
+            '<button class="btn btn-dark btn-sm" style="padding:1px 6px;" title="Hapus catatan (peserta tidak ikut terhapus)" onclick="Auction.delRecord(' + i + ')">✕</button></div>').join('')
+        : '<div style="padding:10px; color:var(--text-muted); text-align:center;">Belum ada catatan lelang.</div>';
+    }
+
+    const Auction = {
+      open() {
+        $('aucInput').value = ''; $('aucDefaultBonus').value = A().defaultBonus != null ? A().defaultBonus : 2;
+        const S = A().session;
+        $('aucTitle').value = S.title || ''; $('aucSlots').value = S.slots || 20; $('aucOB').value = S.ob || ''; $('aucNB').value = S.nb || ''; $('aucBIN').value = S.bin || ''; $('aucMap').value = S.map || ''; $('aucTargets').value = S.targets || '';
+        this.preview(); renderRecords(); App.openModal('auctionModal');
+        setTimeout(() => $('aucInput').focus(), 50);
+      },
+      close() { App.closeModal('auctionModal'); },
+
+      preview() {
+        const rows = analyze(), ok = rows.filter(r => !r.error && !r.dup).length, bad = rows.length - ok;
+        $('aucCount').innerText = ok + ' slot' + (bad ? ' · ' + bad + ' dilewati' : '');
+        $('aucSaveBtn').innerText = ok ? 'MASUKKAN ' + ok + ' PESERTA KE LOMBA' : 'MASUKKAN KE PESERTA';
+        $('aucPreview').innerHTML = rows.length
+          ? '<div class="auc-row head"><span>#</span><span>TIKTOK</span><span>TIPE / NILAI</span><span>BONUS</span><span>DISPLAYNAME</span><span></span></div>' +
+            rows.slice(0, 300).map((r, i) => r.error
+              ? '<div class="auc-row"><span class="no">' + (i + 1) + '</span><span class="c" style="grid-column:2/6; color:var(--text-muted);">' + esc(r.raw) + '</span><span class="auc-err" title="' + esc(r.error) + '">ERROR</span></div>'
+              : '<div class="auc-row"><span class="no">' + (i + 1) + '</span><span class="c">@' + esc(r.tiktok) + '</span>' +
+                '<span class="c"><span class="auc-tag ' + r.type.toLowerCase() + '">' + r.type + '</span> ' + esc(r.amount) + '</span>' +
+                '<span class="auc-bonus">' + (r.bonus ? '+' + r.bonus : '—') + '</span>' +
+                '<span class="c">' + esc(r.name) + (r.user ? '<i>@' + esc(r.user) + '</i>' : '') + '</span>' +
+                '<span class="' + (r.dup ? 'auc-dup' : 'auc-ok') + '">' + (r.dup ? 'DUPLIKAT' : 'OK') + '</span></div>').join('')
+          : '<div style="padding:10px; color:var(--text-muted); text-align:center;">Preview akan muncul di sini.</div>';
+      },
+
+      save() {
+        const rows = analyze().filter(r => !r.error && !r.dup);
+        if (!rows.length) return alert('Tidak ada slot valid untuk dimasukkan.');
+        const def = Math.max(0, parseInt($('aucDefaultBonus').value, 10) || 0);
+        A().defaultBonus = def;
+        const type = $('aucType').value, paid = $('aucPaid').checked, stamp = Date.now();
+        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const st = App.state;
+        rows.forEach((r, i) => {
+          const pid = 'p_' + stamp + '_' + i;
+          const p = {
+            id: pid, name: r.name, username: r.user || '', tiktok: r.tiktok,
+            avatar: DEFAULT_AVATAR + encodeURIComponent(r.user || r.name), type,
+            status: 'ACTIVE', present: true, isPaid: paid, totalScore: r.bonus || 0, roundCatches: [], historyLog: [],
+            auction: { type: r.type, amount: r.amount, bonus: r.bonus || 0 }
+          };
+          if (r.bonus > 0) {
+            const logId = 'log_bin_' + stamp + '_' + i, label = '[LELANG ' + r.type + '] Bonus poin awal';
+            p.historyLog.push({ id: logId, result: label, points: r.bonus, mode: st.mode });
+            st.history.unshift({
+              id: logId, participantId: pid, time: timeStr, participantName: p.name, participantAvatar: p.avatar,
+              mode: st.mode, round: st.mode === 'SURVIVAL' ? st.survival.round : null, location: null,
+              catchResult: label + ' (@' + r.tiktok + ')', points: r.bonus
+            });
+          }
+          st.participants.push(p);
+          A().entries.push({ id: 'a_' + stamp + '_' + i, tiktok: r.tiktok, type: r.type, amount: r.amount, bonus: r.bonus || 0, name: r.name, username: r.user || '', participantId: pid, ts: stamp });
+        });
+        App.saveStorage(); App.renderAll();
+        $('aucInput').value = ''; this.preview(); renderRecords();
+      },
+
+      delRecord(i) {
+        const e = A().entries[i]; if (!e) return;
+        if (!confirm('Hapus catatan lelang "' + e.name + '"?\n(Peserta dan poinnya tidak ikut terhapus.)')) return;
+        A().entries.splice(i, 1); App.saveStorage(); renderRecords();
+      }
+    };
+    window.Auction = Auction;
+    $('aucDefaultBonus').addEventListener('change', () => { A().defaultBonus = Math.max(0, parseInt($('aucDefaultBonus').value, 10) || 0); App.saveStorage(); Auction.preview(); });
+
+    /* ---------- Pengaturan sesi (judul, slot, OB, NB, BIN) ---------- */
+    function saveSession() {
+      A().session = {
+        title: $('aucTitle').value.trim(), map: $('aucMap').value.trim(),
+        slots: Math.min(60, Math.max(1, parseInt($('aucSlots').value, 10) || 20)),
+        ob: $('aucOB').value.trim(), nb: $('aucNB').value.trim(), bin: $('aucBIN').value.trim(),
+        targets: $('aucTargets').value
+      };
+      App.saveStorage();
+    }
+    ['aucTitle', 'aucMap', 'aucTargets', 'aucSlots', 'aucOB', 'aucNB', 'aucBIN'].forEach(id => $(id).addEventListener('input', saveSession));
+    $('aucInput').addEventListener('keydown', (e) => { if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); Auction.save(); } });
+
+    /* ---------- Tombol di sidebar ---------- */
+    const bulkBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.indexOf('BULK PASTE') >= 0);
+    const anchor = bulkBtn || document.querySelector('button[onclick*="App.openAddModal"]');
+    if (anchor) {
+      const b = document.createElement('button');
+      b.className = 'btn btn-purple btn-sm'; b.style.cssText = 'width:100%; margin-bottom:6px;';
+      b.textContent = '🔨 LELANG SLOT (BID / BIN)'; b.onclick = () => Auction.open();
+      anchor.insertAdjacentElement(bulkBtn ? 'afterend' : 'beforebegin', b);
+    }
+
+    /* ---------- Info lelang di detail peserta ---------- */
+    const origDetail = App.showPlayerDetail;
+    App.showPlayerDetail = function (id) {
+      origDetail.apply(this, arguments);
+      const p = App.state.participants.find(x => x.id === id), box = $('modalPlayerStats');
+      if (!p || !box || !p.tiktok) return;
+      const a = p.auction || {};
+      const d = document.createElement('div');
+      d.style.cssText = 'font-size:10px; font-weight:800; color:var(--gold); background:rgba(255,193,7,0.1); border:1px dashed var(--gold); border-radius:6px; padding:5px 8px; margin-bottom:6px;';
+      d.innerHTML = '🎵 @' + esc(p.tiktok) + (a.type ? ' · ' + esc(a.type) + (a.amount ? ' ' + esc(a.amount) : '') : '') + (a.bonus ? ' · bonus awal +' + esc(a.bonus) : '');
+      box.insertAdjacentElement('afterbegin', d);
+    };
+
+    /* ---------- Nama TikTok di podium pemenang ---------- */
+    const origWin = App.announceWinners;
+    App.announceWinners = function () {
+      origWin.apply(this, arguments);
+      const grid = $('winnerPodiumGrid'); if (!grid) return;
+      const sorted = [...App.state.participants].sort((a, b) => b.totalScore - a.totalScore);
+      const order = [sorted[1], sorted[0], sorted[2]].filter(Boolean);
+      Array.from(grid.children).forEach((card, i) => {
+        const p = order[i]; if (!p || !p.tiktok) return;
+        const nm = card.querySelector('div[style*="text-overflow"]'); if (!nm) return;
+        const d = document.createElement('div'); d.className = 'podium-tiktok'; d.textContent = '🎵 @' + p.tiktok;
+        const after = card.querySelector('.podium-username') || nm;
+        after.insertAdjacentElement('afterend', d);
+      });
+    };
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: TAMPILAN STREAM PORTRAIT (TIKTOK LIVE) ===== -->
+  <style id="streamStyle">
+    #streamView { --u: min(1vw, 0.5625vh); position: fixed; inset: 0; z-index: 9000; display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); padding: calc(var(--u) * 2) calc(var(--u) * 3); background-color: var(--bg-dark); background-size: cover; background-position: center; color: #fff; overflow: hidden; user-select: none; }
+    #streamView.safe { padding-top: calc(var(--u) * 9); padding-bottom: calc(var(--u) * 34); }
+    .sv-head { display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * .7); flex-shrink: 0; min-width: 0; }
+    .sv-store { max-width: 100%; font-size: calc(var(--u) * 4); font-weight: 900; letter-spacing: calc(var(--u) * .4); text-transform: uppercase; text-shadow: 0 0 12px var(--accent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sv-chips { display: flex; gap: calc(var(--u) * 1.2); justify-content: center; flex-wrap: wrap; max-width: 100%; }
+    .sv-mode, .sv-map { font-size: calc(var(--u) * 2.5); font-weight: 800; padding: calc(var(--u) * .5) calc(var(--u) * 2.2); border: 1px solid var(--accent); border-radius: 99px; background: var(--acc-15); letter-spacing: calc(var(--u) * .2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .sv-map { border-color: var(--gold); background: rgba(255,193,7,0.12); color: var(--gold); }
+    .sv-auc { display: flex; gap: calc(var(--u) * 1.2); justify-content: center; flex-wrap: wrap; flex-shrink: 0; }
+    .sv-auc span { font-size: calc(var(--u) * 2.7); font-weight: 900; padding: calc(var(--u) * .5) calc(var(--u) * 2); border-radius: calc(var(--u) * 1); background: rgba(0,0,0,0.6); border: 1px solid var(--border-lime); white-space: nowrap; }
+    .sv-auc span.bin { border-color: var(--gold); color: var(--gold); background: rgba(255,193,7,0.12); }
+    .sv-timer { font-family: var(--font-mono); font-weight: 900; font-size: calc(var(--u) * 15); line-height: 1; padding: calc(var(--u) * 1) calc(var(--u) * 5); border: 2px solid var(--accent); border-radius: calc(var(--u) * 2.5); background: rgba(0,0,0,0.65); box-shadow: 0 0 calc(var(--u) * 4) var(--acc-40); text-shadow: 0 0 calc(var(--u) * 2) var(--accent); letter-spacing: calc(var(--u) * .4); }
+    .sv-timer.danger { color: var(--pink); border-color: var(--pink); text-shadow: 0 0 calc(var(--u) * 3) var(--pink); animation: svPulse .5s infinite alternate; }
+    @keyframes svPulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+    .sv-targets { flex-shrink: 0; display: flex; flex-direction: column; gap: calc(var(--u) * .4); padding: calc(var(--u) * 1) calc(var(--u) * 1.6); background: rgba(0,0,0,0.55); border: 1px solid var(--border-lime); border-radius: calc(var(--u) * 1.4); max-height: calc(var(--u) * 26); overflow: hidden; }
+    .sv-targets div { font-size: calc(var(--u) * 2.7); font-weight: 900; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 calc(var(--u) * .8); border-left: 3px solid transparent; color: var(--text-muted); }
+    .sv-targets div.on { color: #fff; border-left-color: var(--accent); background: var(--acc-20); border-radius: 4px; }
+    .sv-list { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); grid-template-rows: repeat(var(--rows, 10), var(--rh, 30px)); align-content: start; grid-auto-flow: column; gap: calc(var(--u) * .6) calc(var(--u) * 1.2); }
+    .sv-row { display: grid; grid-template-columns: calc(var(--rh) * 1.05) calc(var(--rh) * .78) minmax(0, 1fr) auto auto; align-items: center; gap: calc(var(--rh) * .16); padding: 0 calc(var(--rh) * .2); background: rgba(12,18,32,0.8); border: 1px solid var(--border-lime); border-radius: calc(var(--rh) * .22); min-height: 0; overflow: hidden; }
+    .sv-row.r1 { border-left: 4px solid var(--gold); background: rgba(40,32,8,0.85); }
+    .sv-row.r2 { border-left: 4px solid #c0c7d1; }
+    .sv-row.r3 { border-left: 4px solid #cd7f32; }
+    .sv-row.elim { opacity: .42; }
+    .sv-row.elim .n { text-decoration: line-through; }
+    .sv-rank { font-size: max(9px, calc(var(--rh) * .34)); font-weight: 900; text-align: center; color: var(--text-muted); white-space: nowrap; }
+    .sv-row.r1 .sv-rank, .sv-row.r2 .sv-rank, .sv-row.r3 .sv-rank { color: var(--gold); }
+    .sv-av { width: calc(var(--rh) * .74); height: calc(var(--rh) * .74); border-radius: 50%; object-fit: cover; border: 2px solid var(--purple); background: rgba(0,0,0,0.5); }
+    .sv-nm { min-width: 0; display: flex; flex-direction: row; align-items: baseline; gap: .45em; line-height: 1.15; overflow: hidden; }
+    .sv-nm .n { flex: 0 1 auto; min-width: 0; font-size: max(10px, calc(var(--rh) * .38)); font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--custom-text-color); text-shadow: 1.5px 1.5px 0 #000, -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000; }
+    .sv-nm .u { flex: 0 1 auto; min-width: 0; font-size: max(8px, calc(var(--rh) * .27)); font-weight: 700; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sv-tag { font-size: max(8px, calc(var(--rh) * .26)); font-weight: 900; padding: 0 .6em; border-radius: 99px; background: rgba(255,255,255,0.12); color: #fff; white-space: nowrap; line-height: 1.5; }
+    .sv-tag.bin { background: rgba(255,193,7,0.2); color: var(--gold); }
+    .sv-tag:empty { display: none; }
+    .sv-sc { font-family: var(--font-mono); font-size: max(11px, calc(var(--rh) * .44)); font-weight: 900; color: var(--custom-text-color); text-shadow: 1.5px 1.5px 0 #000, -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000; white-space: nowrap; }
+    .sv-sc small { font-size: .5em; margin-left: .25em; color: var(--text-muted); }
+    .sv-prize { flex-shrink: 0; text-align: center; font-size: calc(var(--u) * 2.8); font-weight: 900; color: var(--gold); padding: calc(var(--u) * .8) calc(var(--u) * 2); border: 1px solid var(--gold); border-radius: 99px; background: rgba(255,193,7,0.12); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .2s; }
+    .sv-tools { position: absolute; top: 6px; right: 6px; display: flex; flex-wrap: wrap; justify-content: flex-end; max-width: 96%; gap: 6px; opacity: 0; transition: opacity .2s; z-index: 5; }
+    #streamView:hover .sv-tools { opacity: 1; }
+    .sv-tools button { font-size: 10px !important; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--accent); background: rgba(0,0,0,0.8); color: #fff; font-weight: 800; cursor: pointer; }
+    /* Layar pemenang */
+    #svWin { position: absolute; inset: 0; z-index: 4; background: rgba(2,4,8,0.98); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--u) * 3); padding: calc(var(--u) * 3); }
+    #streamView.safe #svWin { padding-top: calc(var(--u) * 9); padding-bottom: calc(var(--u) * 30); }
+    .svw-title { font-size: calc(var(--u) * 5); font-weight: 900; color: var(--gold); text-align: center; text-shadow: 0 0 calc(var(--u) * 3) var(--gold); }
+    .svw-pod { display: flex; align-items: flex-end; justify-content: center; gap: calc(var(--u) * 2); width: 100%; }
+    .svw-card { width: calc(var(--u) * 29); text-align: center; padding: calc(var(--u) * 1.6) calc(var(--u) * 1); border-radius: calc(var(--u) * 2); background: rgba(12,18,32,0.95); border: 2px solid #c0c7d1; min-width: 0; }
+    .svw-card.p1 { border-color: var(--gold); background: rgba(40,32,8,0.95); padding-top: calc(var(--u) * 3); padding-bottom: calc(var(--u) * 3); }
+    .svw-card.p3 { border-color: #cd7f32; }
+    .svw-card .badge { font-size: calc(var(--u) * 2.2); font-weight: 900; }
+    .svw-card img { width: calc(var(--u) * 11); height: calc(var(--u) * 11); border-radius: 50%; object-fit: cover; border: 3px solid currentColor; margin: calc(var(--u) * 1) 0; background: rgba(0,0,0,0.5); }
+    .svw-card.p1 img { width: calc(var(--u) * 14); height: calc(var(--u) * 14); }
+    .svw-card .n { font-size: calc(var(--u) * 2.9); font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .svw-card .u { font-size: calc(var(--u) * 2); color: var(--text-muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .svw-card .s { font-family: var(--font-mono); font-size: calc(var(--u) * 3.6); font-weight: 900; margin-top: calc(var(--u) * .6); }
+    .svw-card .pz { font-size: calc(var(--u) * 2.3); font-weight: 900; color: var(--gold); margin-top: calc(var(--u) * .8); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .svw-extra { width: 100%; display: flex; flex-direction: column; gap: calc(var(--u) * .8); max-height: calc(var(--u) * 30); overflow: hidden; }
+    .svw-row { display: grid; grid-template-columns: calc(var(--u) * 6) 1fr auto; gap: calc(var(--u) * 1.5); align-items: center; padding: calc(var(--u) * .9) calc(var(--u) * 2); background: rgba(12,18,32,0.9); border: 1px solid var(--border-lime); border-radius: calc(var(--u) * 1.2); font-size: calc(var(--u) * 2.5); font-weight: 800; }
+    .svw-row .rk { color: var(--gold); font-family: var(--font-mono); font-weight: 900; }
+    .svw-row .nm { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .svw-row .pz { color: var(--gold); font-weight: 900; }
+  </style>
+
+  <script>
+  (function () {
+    const MAIN_KEY = 'GALATAMA_V6_HORIZONTAL', WIN_KEY = 'GALATAMA_STREAM_WINNERS', SAFE_KEY = 'GALATAMA_STREAM_SAFE', COLS_KEY = 'GALATAMA_STREAM_COLS', TGT_KEY = 'GALATAMA_STREAM_TARGETS';
+    const isStream = location.hash === '#stream';
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const lget = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const lset = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+    const has = (v) => v != null && String(v).trim() !== '';
+
+    /* ======================================================= JENDELA UTAMA (operator) */
+    if (!isStream) {
+      lset(WIN_KEY, '0');
+      let win = null;
+      const setBtn = document.querySelector('header button[onclick*="openSettingsModal"]');
+      if (setBtn) {
+        const b = document.createElement('button');
+        b.className = 'btn btn-lime btn-sm'; b.textContent = '📱 STREAM'; b.title = 'Buka tampilan portrait untuk TikTok Live (jendela terpisah)';
+        b.onclick = () => {
+          if (win && !win.closed) { win.focus(); return; }
+          win = window.open(location.href.split('#')[0] + '#stream', 'galatamaStreamView', 'popup=yes,width=540,height=960,resizable=yes');
+          if (!win) alert('Pop-up diblokir browser. Izinkan pop-up untuk halaman ini, lalu klik lagi.');
+        };
+        setBtn.insertAdjacentElement('beforebegin', b);
+      }
+      // pastikan data selalu tersimpan setelah perubahan (jendela stream membaca dari penyimpanan)
+      const origAll = App.renderAll;
+      App.renderAll = function () { origAll.apply(this, arguments); try { App.saveStorage(); } catch (e) {} };
+      const origWin = App.announceWinners;
+      App.announceWinners = function () { origWin.apply(this, arguments); lset(WIN_KEY, '1'); };
+      const origClose = App.closeModal;
+      App.closeModal = function (id) { origClose.apply(this, arguments); if (id === 'winnerModal') lset(WIN_KEY, '0'); };
+      return;
+    }
+
+    /* ======================================================= JENDELA STREAM (portrait) */
+    App.saveStorage = function () {};            // jendela ini hanya menampilkan; tidak boleh menulis data
+    document.title = 'GALATAMA STREAM VIEW';
+
+    const view = document.createElement('div');
+    view.id = 'streamView';
+    view.innerHTML =
+      '<div class="sv-tools"><button id="svTgt"></button><button id="svSafe"></button><button id="svCols"></button></div>' +
+      '<div class="sv-head"><div class="sv-store" id="svStore"></div><div class="sv-chips"><div class="sv-map" id="svMap" style="display:none;"></div><div class="sv-mode" id="svMode"></div></div></div>' +
+      '<div class="sv-auc" id="svAuc" style="display:none;"></div>' +
+      '<div style="display:flex; justify-content:center; flex-shrink:0;"><div class="sv-timer" id="svTimer">00:00</div></div>' +
+      '<div class="sv-targets" id="svTargets" style="display:none;"></div>' +
+      '<div class="sv-list" id="svList"></div>' +
+      '<div class="sv-prize" id="svPrize" style="display:none;"></div>' +
+      '<div id="svWin" style="display:none;"></div>';
+    document.body.appendChild(view);
+
+    const SAFE_ON = () => lget(SAFE_KEY) !== '0';
+    const COLS = () => lget(COLS_KEY) || 'auto';
+    const TGT_ON = () => lget(TGT_KEY) !== '0';
+    function refreshTools() {
+      view.classList.toggle('safe', SAFE_ON());
+      $('svSafe').textContent = '📐 SAFE AREA: ' + (SAFE_ON() ? 'ON' : 'OFF');
+      $('svCols').textContent = '▤ KOLOM: ' + COLS().toUpperCase();
+      $('svTgt').textContent = '🎯 TARGET: ' + (TGT_ON() ? 'ON' : 'OFF');
+      fit();
+    }
+    const redraw = () => { lastSig = ''; tgtSig = ''; refreshTools(); poll(true); };
+    $('svSafe').onclick = () => { lset(SAFE_KEY, SAFE_ON() ? '0' : '1'); refreshTools(); };
+    $('svCols').onclick = () => { const n = { auto: '1', '1': '2', '2': 'auto' }[COLS()] || 'auto'; lset(COLS_KEY, n); redraw(); };
+    $('svTgt').onclick = () => { lset(TGT_KEY, TGT_ON() ? '0' : '1'); redraw(); };
+
+    const medalOf = (i) => (['👑', '🥈', '🥉'][i] || '#' + (i + 1));
+    let lastRaw = null, lastSig = '', tgtSig = '', lastWinSig = '', lastData = null, tickIdx = 0, tickTimer = null, tickKey = '';
+
+    function fit() {
+      const list = $('svList'); if (!list) return;
+      const cs = getComputedStyle(list);
+      const rows = parseInt(cs.getPropertyValue('--rows')) || 1;
+      const gap = parseFloat(cs.rowGap) || 0;
+      const cols = parseInt(cs.getPropertyValue('--cols')) || 1;
+      const fitH = (list.clientHeight - gap * (rows - 1)) / rows;
+      const cap = Math.max(18, (list.clientWidth / cols) * 0.1);      // baris tidak boleh melar kalau peserta sedikit
+      list.style.setProperty('--rh', Math.max(14, Math.min(fitH, cap)) + 'px');
+    }
+    new ResizeObserver(fit).observe(view);
+    window.addEventListener('resize', fit);
+
+    function renderTimer(d) {
+      const t = d.timer || {}, sec = Math.max(0, t.secondsLeft || 0);
+      const el = $('svTimer');
+      el.textContent = String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0');
+      el.classList.toggle('danger', sec === 0 || (!!t.isRunning && sec <= 10));
+    }
+
+    function renderHead(d) {
+      const A = d.auction || {}, S = A.session || {};
+      $('svStore').textContent = S.title || d.clientName || 'OFFICIAL STORE';
+      const map = $('svMap'); map.style.display = has(S.map) ? '' : 'none'; map.textContent = has(S.map) ? '🗺️ ' + S.map : '';
+      let m = String(d.mode || '').replace(/_/g, ' ');
+      if (d.mode === 'SURVIVAL') m += ' · ROUND ' + ((d.survival && d.survival.round) || 1) + ' / 5';
+      else if (d.mode === 'POINT_RUSH' && d.pointRushLocation) m += ' · ' + d.pointRushLocation;
+      $('svMode').textContent = m;
+
+      // info lelang: OB / NB / BIN (+bonus) / slot terisi
+      const bonus = A.defaultBonus || 0, ents = A.entries || [], pills = [];
+      if (has(S.ob)) pills.push('<span>OB : ' + esc(S.ob) + '</span>');
+      if (has(S.nb)) pills.push('<span>NB : ' + esc(S.nb) + '</span>');
+      if (has(S.bin)) pills.push('<span class="bin">BIN : ' + esc(S.bin) + (bonus > 0 ? ' (+' + esc(bonus) + ' Pts)' : '') + '</span>');
+      if (ents.length) pills.push('<span>SLOT ' + (d.participants || []).length + ' / ' + esc(S.slots || 20) + '</span>');
+      const auc = $('svAuc'); auc.style.display = pills.length ? '' : 'none'; auc.innerHTML = pills.join('');
+    }
+
+    function renderTargets(d) {
+      const S = (d.auction || {}).session || {}, box = $('svTargets');
+      const lines = String(S.targets || '').split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const active = d.mode === 'SURVIVAL' ? ((d.survival && d.survival.round) || 1) - 1 : -1;
+      const sig = TGT_ON() + '|' + active + '|' + lines.join('\n');
+      if (sig === tgtSig) return;
+      tgtSig = sig;
+      if (!TGT_ON() || !lines.length) { box.style.display = 'none'; fit(); return; }
+      box.style.display = 'flex';
+      box.innerHTML = lines.map((l, i) => '<div class="' + (i === active ? 'on' : '') + '">' + esc(/^j\s*\d+/i.test(l) ? l : 'J' + (i + 1) + ' ' + l) + '</div>').join('');
+      fit();
+    }
+
+    function renderList(d) {
+      const all = (d.participants || []).filter(p => p.present !== false);
+      const sorted = [...all].sort((a, b) => b.totalScore - a.totalScore);
+      const sig = COLS() + '|' + sorted.map(p => [p.id, p.name, p.username || '', p.totalScore, p.status, p.auction ? p.auction.type + (p.auction.amount || '') : '', (p.avatar || '').length + (p.avatar || '').slice(-12)].join('~')).join('|');
+      if (sig === lastSig) return;
+      lastSig = sig;
+      const n = Math.max(1, sorted.length);
+      const cols = COLS() === 'auto' ? (n <= 24 ? 1 : 2) : parseInt(COLS(), 10);
+      const list = $('svList');
+      list.style.setProperty('--cols', cols);
+      list.style.setProperty('--rows', Math.ceil(n / cols));
+      list.innerHTML = sorted.map((p, i) => {
+        const a = p.auction || {};
+        const tag = a.type === 'BIN' ? '<span class="sv-tag bin">BIN</span>' : (a.type === 'BID' ? '<span class="sv-tag">' + esc(a.amount || 'BID') + '</span>' : '<span class="sv-tag"></span>');
+        return '<div class="sv-row' + (i < 3 ? ' r' + (i + 1) : '') + (p.status !== 'ACTIVE' ? ' elim' : '') + '">' +
+          '<span class="sv-rank">' + medalOf(i) + '</span>' +
+          '<img class="sv-av" src="' + esc(p.avatar) + '" onerror="this.style.visibility=\'hidden\'">' +
+          '<div class="sv-nm"><div class="n">' + esc(p.name) + '</div>' + (p.username ? '<div class="u">@' + esc(p.username) + '</div>' : '') + '</div>' +
+          tag + '<span class="sv-sc">' + esc(p.totalScore) + '<small>PTS</small></span></div>';
+      }).join('');
+      fit();
+    }
+
+    function renderPrize(d) {
+      const pz = d.prizes || {}, items = pz.items || [], el = $('svPrize');
+      const key = JSON.stringify([items, pz.display]);
+      if (key === tickKey) return;
+      tickKey = key; clearInterval(tickTimer);
+      if (!items.length || pz.display === 'hidden') { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      const lab = (i) => (['🥇', '🥈', '🥉'][i] || '🏅') + ' JUARA ' + (i + 1) + ' · ' + items[i];
+      tickIdx = 0; el.textContent = '🎁 ' + lab(0); tickIdx = 1;
+      if (items.length > 1) tickTimer = setInterval(() => {
+        const i = tickIdx % items.length; el.style.opacity = 0;
+        setTimeout(() => { el.textContent = '🎁 ' + lab(i); el.style.opacity = 1; }, 200); tickIdx++;
+      }, 3500);
+    }
+
+    function renderWinners(d, open) {
+      const box = $('svWin');
+      if (!open) { box.style.display = 'none'; lastWinSig = ''; return; }
+      const sorted = [...(d.participants || [])].sort((a, b) => b.totalScore - a.totalScore);
+      const items = (d.prizes && d.prizes.items) || [];
+      const sig = JSON.stringify([sorted.slice(0, 12).map(p => [p.id, p.name, p.totalScore]), items]);
+      box.style.display = 'flex';
+      if (sig === lastWinSig) return;
+      lastWinSig = sig;
+      const card = (p, i, cls, label) => !p ? '' :
+        '<div class="svw-card ' + cls + '" style="color:' + (i === 0 ? 'var(--gold)' : i === 1 ? '#c0c7d1' : '#cd7f32') + '">' +
+        '<div class="badge">' + label + '</div><img src="' + esc(p.avatar) + '" onerror="this.style.visibility=\'hidden\'">' +
+        '<div class="n" style="color:#fff">' + esc(p.name) + '</div>' + (p.username ? '<div class="u">@' + esc(p.username) + '</div>' : '') + (p.tiktok ? '<div class="u">🎵 @' + esc(p.tiktok) + '</div>' : '') +
+        '<div class="s" style="color:var(--custom-text-color)">' + esc(p.totalScore) + ' Pts</div>' +
+        (items[i] ? '<div class="pz">🎁 ' + esc(items[i]) + '</div>' : '') + '</div>';
+      let extra = '';
+      for (let i = 3; i < Math.min(items.length, sorted.length, 8); i++)
+        extra += '<div class="svw-row"><span class="rk">#' + (i + 1) + '</span><span class="nm">' + esc(sorted[i].name) + (sorted[i].username ? ' <span style="color:var(--text-muted)">@' + esc(sorted[i].username) + '</span>' : '') + '</span><span class="pz">🎁 ' + esc(items[i]) + '</span></div>';
+      box.innerHTML = '<div class="svw-title">🏆 GRAND CHAMPIONS 🏆</div>' +
+        '<div class="svw-pod">' + card(sorted[1], 1, 'p2', '🥈 JUARA 2') + card(sorted[0], 0, 'p1', '👑 JUARA 1') + card(sorted[2], 2, 'p3', '🥉 JUARA 3') + '</div>' +
+        (extra ? '<div class="svw-extra">' + extra + '</div>' : '');
+    }
+
+    function apply(d) {
+      lastData = d;
+      view.style.setProperty('--custom-text-color', d.customTextColor || '#ffffff');
+      view.style.backgroundImage = d.bgImage ? 'linear-gradient(rgba(2,4,8,.6), rgba(2,4,8,.6)), url("' + String(d.bgImage).replace(/"/g, '%22') + '")' : 'none';
+      renderHead(d); renderTimer(d); renderTargets(d); renderList(d); renderPrize(d);
+      renderWinners(d, lget(WIN_KEY) === '1');
+    }
+
+    function poll(force) {
+      const raw = lget(MAIN_KEY), w = lget(WIN_KEY);
+      if (!force && raw === lastRaw && w === poll.w) return;
+      poll.w = w; lastRaw = raw;
+      let d = null; try { d = JSON.parse(raw); } catch (e) {}
+      if (d) apply(d);
+      else if (lastData) renderWinners(lastData, w === '1');
+    }
+    window.addEventListener('storage', (e) => {
+      if (e.key === MAIN_KEY || e.key === WIN_KEY) poll();
+      else if (e.key === 'GALATAMA_ACCENT_COLOR' && window.Accent) Accent.apply(Accent.get());
+      else if (e.key === 'GALATAMA_LABEL_COLOR' && window.LabelColor) LabelColor.apply(LabelColor.get());
+    });
+    setInterval(poll, 400);                       // cadangan bila event storage tidak terkirim
+    refreshTools(); poll(true);
+  })();
+  </script>
 </body>
 </html>
