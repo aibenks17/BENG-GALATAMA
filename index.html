@@ -2739,6 +2739,9 @@
       App.announceWinners = function () { origWin.apply(this, arguments); lset(WIN_KEY, '1'); };
       const origClose = App.closeModal;
       App.closeModal = function (id) { origClose.apply(this, arguments); if (id === 'winnerModal') lset(WIN_KEY, '0'); };
+      // simpan state langsung saat START, supaya jendela stream tahu timer jalan tanpa nunggu 1 detik
+      const origStart = App.actualStartTimer;
+      App.actualStartTimer = function () { origStart.apply(this, arguments); try { App.saveStorage(); } catch (e) {} };
       return;
     }
 
@@ -2889,12 +2892,41 @@
         (extra ? '<div class="svw-extra">' + extra + '</div>' : '');
     }
 
+    /* ---- EFEK STREAM: bendera MATCH STARTED + hitungan 10 detik terakhir ---- */
+    const svFxStyle = document.createElement('style');
+    svFxStyle.textContent = '@keyframes pulseGiantSV{from{transform:scale(1);opacity:.85}to{transform:scale(1.08);opacity:1}}' +
+      '#flagBannerOverlay .flag-cloth{width:min(580px,92vw);height:auto;aspect-ratio:580/320}' +
+      '#flagBannerOverlay .flag-client-title{font-size:min(32px,6vw);letter-spacing:2px}' +
+      '#flagBannerOverlay .flag-content{padding:3vw 5vw}';
+    document.head.appendChild(svFxStyle);
+    const svGiant = document.createElement('div');
+    svGiant.style.cssText = 'position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:6;font-family:var(--font-mono);font-weight:900;color:var(--pink);font-size:calc(var(--u) * 46);text-shadow:0 0 50px var(--pink),0 0 100px rgba(255,0,85,.8);animation:pulseGiantSV .4s infinite alternate';
+    view.appendChild(svGiant);
+    let svPrevRun = null, svFlagT = null;
+    function svFlag(d) {
+      const ov = document.getElementById('flagBannerOverlay'), cl = document.getElementById('flagClothElement');
+      if (!ov || !cl) return;
+      document.getElementById('flagClientTitle').innerText = (d.clientName || 'OFFICIAL STORE').toUpperCase();
+      cl.className = 'flag-cloth anim-' + (d.flagAnimation || 'DEMON_RAGE');
+      cl.style.backgroundImage = d.bgImage ? 'url("' + String(d.bgImage).replace(/"/g, '%22') + '")' : 'linear-gradient(135deg, #00ffb2, #8a2be2)';
+      ov.classList.remove('hidden'); clearTimeout(svFlagT);
+      svFlagT = setTimeout(() => ov.classList.add('hidden'), (d.flagDuration || 3) * 1000);
+    }
+    function svFx(d) {
+      const t = d.timer || {}, sec = t.secondsLeft || 0, run = !!t.isRunning;
+      svGiant.style.display = (run && sec <= 10 && sec > 0) ? 'flex' : 'none';
+      svGiant.textContent = sec;
+      if (svPrevRun === false && run) svFlag(d);
+      svPrevRun = run;
+    }
+
     function apply(d) {
       lastData = d;
       view.style.setProperty('--custom-text-color', d.customTextColor || '#ffffff');
       view.style.backgroundImage = d.bgImage ? 'linear-gradient(rgba(2,4,8,.6), rgba(2,4,8,.6)), url("' + String(d.bgImage).replace(/"/g, '%22') + '")' : 'none';
       renderHead(d); renderTimer(d); renderTargets(d); renderList(d); renderPrize(d);
       renderWinners(d, lget(WIN_KEY) === '1');
+      svFx(d);
     }
 
     function poll(force) {
@@ -2912,6 +2944,216 @@
     });
     setInterval(poll, 400);                       // cadangan bila event storage tidak terkirim
     refreshTools(); poll(true);
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: TIMER LELANG (set di menu Lelang, tampil di layar Stream) ===== -->
+  <script>
+  (function () {
+    const KEY = 'GALATAMA_V6_HORIZONTAL', isStream = location.hash === '#stream';
+    const $ = id => document.getElementById(id), pad = n => String(n).padStart(2, '0');
+    const fmt = s => pad(Math.floor(s / 60)) + ':' + pad(s % 60);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const left = t => !t ? 0 : (t.running ? Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000)) : Math.max(0, t.left != null ? t.left : (t.dur || 0)));
+    const st = document.createElement('style');
+    st.textContent = '@keyframes aucPulse{from{transform:scale(1);opacity:.85}to{transform:scale(1.08);opacity:1}}' +
+      '#aucPill{position:fixed;right:12px;bottom:12px;z-index:8000;display:none;cursor:pointer;background:rgba(4,7,14,.92);border:2px solid var(--gold);border-radius:10px;padding:8px 14px;font-family:var(--font-mono);font-weight:900;color:var(--gold);box-shadow:0 0 18px rgba(0,0,0,.7)}' +
+      '#aucPill.danger{border-color:var(--pink);color:var(--pink);animation:aucPulse .4s infinite alternate}' +
+      '#svAucTimer{flex-shrink:0;text-align:center;display:none;background:rgba(0,0,0,.55);border:calc(var(--u)*.4) solid var(--gold);border-radius:calc(var(--u)*2);padding:calc(var(--u)*1.2) calc(var(--u)*3)}' +
+      '#svAucTimer .lb{font-size:calc(var(--u)*2.6);font-weight:900;letter-spacing:calc(var(--u)*.4);color:var(--gold);text-transform:uppercase}' +
+      '#svAucTimer .tm{font-family:var(--font-mono);font-size:calc(var(--u)*11);font-weight:900;color:#fff;line-height:1.05}' +
+      '#svAucTimer.danger{border-color:var(--pink)}#svAucTimer.danger .tm{color:var(--pink);animation:aucPulse .4s infinite alternate}' +
+      '#svAucTimer.done{border-color:var(--pink)}#svAucTimer.done .tm{color:var(--pink);font-size:calc(var(--u)*7)}' +
+      '#svAucGiant{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:7;font-family:var(--font-mono);font-weight:900;color:var(--gold);font-size:calc(var(--u)*46);text-shadow:0 0 50px var(--gold),0 0 100px rgba(255,170,0,.8);animation:aucPulse .4s infinite alternate}';
+    document.head.appendChild(st);
+
+    if (!isStream) {
+      /* ---------------- JENDELA UTAMA: kontrol di menu Lelang ---------------- */
+      const A = () => App.state.auction || (App.state.auction = { defaultBonus: 2, entries: [] });
+      const T = () => A().timer || (A().timer = { label: '', dur: 60, left: 60, running: false, endsAt: 0, done: false });
+      const save = () => { try { App.saveStorage(); } catch (e) {} paint(); };
+      const AT = window.AucTimer = {
+        setDur(sec) { const t = T(); t.dur = Math.max(1, sec | 0); if (!t.running) { t.left = t.dur; t.done = false; } save(); },
+        start() { const t = T(); if (t.running) return; let l = left(t); if (l <= 0) l = t.dur; t.left = l; t.endsAt = Date.now() + l * 1000; t.running = true; t.done = false; save(); },
+        pause() { const t = T(); if (!t.running) return; t.left = left(t); t.running = false; save(); },
+        reset() { const t = T(); t.running = false; t.left = t.dur; t.done = false; save(); },
+        add(sec) { const t = T(); if (t.running) t.endsAt += sec * 1000; else t.left = Math.max(0, left(t) + sec); if (left(t) > 0) t.done = false; save(); },
+        fromInputs() { AT.setDur((parseInt($('aucTMin').value, 10) || 0) * 60 + (parseInt($('aucTSec').value, 10) || 0)); },
+        label(v) { T().label = v.trim(); try { App.saveStorage(); } catch (e) {} }
+      };
+      const tgt = $('aucTargets');
+      if (tgt) {
+        const box = document.createElement('div');
+        box.style.cssText = 'flex:1 1 100%; padding:8px; border:1px solid var(--gold); border-radius:6px; background:rgba(0,0,0,.35);';
+        box.innerHTML =
+          '<label style="font-size:8px; color:var(--gold); font-weight:900;">⏱ TIMER LELANG (TAMPIL BESAR DI LAYAR STREAM)</label>' +
+          '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; margin:6px 0;">' +
+            '<div style="flex:2 1 150px;"><label style="font-size:8px; color:var(--text-muted);">JUDUL (opsional)</label><input type="text" id="aucTLabel" class="input-field" placeholder="LELANG KURSI #1" oninput="AucTimer.label(this.value)"></div>' +
+            '<div style="flex:0 1 60px;"><label style="font-size:8px; color:var(--text-muted);">MENIT</label><input type="number" id="aucTMin" class="input-field" min="0" max="99" onchange="AucTimer.fromInputs()"></div>' +
+            '<div style="flex:0 1 60px;"><label style="font-size:8px; color:var(--text-muted);">DETIK</label><input type="number" id="aucTSec" class="input-field" min="0" max="59" onchange="AucTimer.fromInputs()"></div>' +
+          '</div>' +
+          '<div style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:6px;">' +
+            [30, 60, 120, 300].map(x => '<button class="btn btn-purple btn-sm" onclick="AucTimer.setDur(' + x + '); AucTimer.sync()">' + (x < 60 ? x + ' dtk' : x / 60 + ' mnt') + '</button>').join('') +
+          '</div>' +
+          '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">' +
+            '<div id="aucTLeft" style="font-family:var(--font-mono); font-size:28px; font-weight:900; color:var(--gold); min-width:90px;">00:00</div>' +
+            '<button class="btn btn-lime btn-sm" onclick="AucTimer.start()">▶ START</button>' +
+            '<button class="btn btn-gold btn-sm" onclick="AucTimer.pause()">⏸ PAUSE</button>' +
+            '<button class="btn btn-purple btn-sm" onclick="AucTimer.reset()">↺ RESET</button>' +
+            '<button class="btn btn-lime btn-sm" onclick="AucTimer.add(10)">+10s</button>' +
+            '<button class="btn btn-lime btn-sm" onclick="AucTimer.add(30)">+30s</button>' +
+          '</div>';
+        tgt.parentElement.insertAdjacentElement('afterend', box);
+      }
+      AT.sync = () => { const t = T(); const l = $('aucTLabel'); if (l && document.activeElement !== l) l.value = t.label || ''; if ($('aucTMin') && document.activeElement !== $('aucTMin') && document.activeElement !== $('aucTSec')) { $('aucTMin').value = Math.floor(t.dur / 60); $('aucTSec').value = t.dur % 60; } paint(); };
+      const pill = document.createElement('div'); pill.id = 'aucPill';
+      pill.onclick = () => { try { Auction.open(); } catch (e) {} };
+      document.body.appendChild(pill);
+      let lastSec = -1;
+      function paint() {
+        const t = T(), l = left(t), d = l <= 10 && l > 0 && t.running;
+        if ($('aucTLeft')) $('aucTLeft').textContent = fmt(l);
+        const show = t.running || t.done || (l > 0 && l < t.dur);
+        pill.style.display = show ? 'block' : 'none';
+        pill.className = d || t.done ? 'danger' : '';
+        pill.textContent = t.done ? '⏱ LELANG DITUTUP' : '⏱ ' + (t.label || 'LELANG') + ' ' + fmt(l);
+      }
+      setInterval(() => {
+        const t = T();
+        if (t.running) {
+          const l = left(t);
+          if (l <= 0) { t.running = false; t.left = 0; t.done = true; try { AudioEngine.playBuzzer(); } catch (e) {} try { App.saveStorage(); } catch (e) {} }
+          else if (l <= 10 && l !== lastSec) { try { AudioEngine.playTick(l); } catch (e) {} }
+          lastSec = l;
+        }
+        paint();
+      }, 250);
+      const openOrig = window.Auction && Auction.open;
+      if (openOrig) Auction.open = function () { const r = openOrig.apply(this, arguments); AT.sync(); return r; };
+      AT.sync();
+    } else {
+      /* ---------------- JENDELA STREAM: tampilkan timer lelang ---------------- */
+      let tm = null, raw = null, el, giant;
+      const iv = setInterval(() => {
+        const anchor = $('svAuc'), view = $('streamView');
+        if (!anchor || !view) return;
+        clearInterval(iv);
+        el = document.createElement('div'); el.id = 'svAucTimer'; anchor.insertAdjacentElement('afterend', el);
+        giant = document.createElement('div'); giant.id = 'svAucGiant'; view.appendChild(giant);
+        setInterval(render, 250);
+      }, 100);
+      function render() {
+        let r = null; try { r = localStorage.getItem(KEY); } catch (e) {}
+        if (r !== raw) { raw = r; try { const d = JSON.parse(r); tm = d && d.auction && d.auction.timer || null; } catch (e) { tm = null; } }
+        const l = left(tm), run = !!(tm && tm.running), done = !!(tm && tm.done);
+        const show = tm && (run || done || (l > 0 && l < tm.dur));
+        el.style.display = show ? 'block' : 'none';
+        if (!show) { giant.style.display = 'none'; return; }
+        const danger = run && l <= 10 && l > 0;
+        el.className = done ? 'done' : (danger ? 'danger' : '');
+        el.innerHTML = '<div class="lb">⏱ ' + esc(tm.label || 'LELANG') + (!run && !done ? ' · PAUSE' : '') + '</div><div class="tm">' + (done ? 'LELANG DITUTUP' : fmt(l)) + '</div>';
+        giant.style.display = danger ? 'flex' : 'none'; giant.textContent = l;
+      }
+    }
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: TAMPILAN HADIAH (papan juara di Stream + pill berwarna di jendela utama) ===== -->
+  <script>
+  (function () {
+    const KEY = 'GALATAMA_V6_HORIZONTAL', isStream = location.hash === '#stream';
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const st = document.createElement('style');
+    st.textContent =
+      '@keyframes pzSheen{0%{transform:translateX(-130%) skewX(-20deg)}60%,100%{transform:translateX(230%) skewX(-20deg)}}' +
+      '@keyframes pzGlow{from{box-shadow:0 0 6px rgba(255,193,7,.25)}to{box-shadow:0 0 16px rgba(255,193,7,.65)}}' +
+      /* --- jendela utama: pill hadiah + daftar hadiah --- */
+      '.prize-pill{font-size:11px !important;padding:3px 16px !important;background:linear-gradient(90deg,rgba(255,193,7,.3),rgba(255,193,7,.08)) !important;animation:pzGlow 1.8s ease-in-out infinite alternate}' +
+      '.prize-pill[data-r="2"]{border-color:#c0c7d1 !important;color:#e6ebf2 !important;background:linear-gradient(90deg,rgba(192,199,209,.3),rgba(192,199,209,.08)) !important}' +
+      '.prize-pill[data-r="3"]{border-color:#cd7f32 !important;color:#ffb06a !important;background:linear-gradient(90deg,rgba(205,127,50,.32),rgba(205,127,50,.08)) !important}' +
+      '.prize-row:nth-child(1){border-color:var(--gold);background:linear-gradient(90deg,rgba(255,193,7,.22),rgba(0,0,0,.5));box-shadow:0 0 14px rgba(255,193,7,.35)}' +
+      '.prize-row:nth-child(2){border-color:#c0c7d1;background:linear-gradient(90deg,rgba(192,199,209,.2),rgba(0,0,0,.5))}' +
+      '.prize-row:nth-child(3){border-color:#cd7f32;background:linear-gradient(90deg,rgba(205,127,50,.22),rgba(0,0,0,.5))}' +
+      '.prize-row:nth-child(-n+3) .pr-rank{font-size:26px}.prize-row:nth-child(-n+3) .pr-name{font-size:14px}' +
+      /* --- jendela stream: papan hadiah --- */
+      '#svPrize{display:none !important}' +
+      '#svPrizeBoard{flex-shrink:0;display:none;flex-direction:column;gap:calc(var(--u)*.9)}' +
+      '#svPrizeBoard .pb-h{text-align:center;font-size:calc(var(--u)*2.4);font-weight:900;letter-spacing:calc(var(--u)*.7);color:var(--gold);text-shadow:0 0 12px rgba(255,193,7,.6)}' +
+      '#svPrizeBoard .pb-top{display:grid;gap:calc(var(--u)*1);align-items:end}' +
+      '#svPrizeBoard .pb-c{position:relative;overflow:hidden;text-align:center;padding:calc(var(--u)*1.1) calc(var(--u)*.8);border-radius:calc(var(--u)*1.6);border:calc(var(--u)*.35) solid;background:rgba(0,0,0,.6)}' +
+      '#svPrizeBoard .pb-c::after{content:"";position:absolute;top:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);animation:pzSheen 3.2s infinite}' +
+      '#svPrizeBoard .r1{border-color:#ffc107;color:#ffc107;background:linear-gradient(180deg,rgba(255,193,7,.28),rgba(0,0,0,.6));box-shadow:0 0 calc(var(--u)*3) rgba(255,193,7,.55);padding-top:calc(var(--u)*1.8);padding-bottom:calc(var(--u)*1.8)}' +
+      '#svPrizeBoard .r2{border-color:#c0c7d1;color:#dfe5ee;background:linear-gradient(180deg,rgba(192,199,209,.24),rgba(0,0,0,.6))}' +
+      '#svPrizeBoard .r3{border-color:#cd7f32;color:#ffb06a;background:linear-gradient(180deg,rgba(205,127,50,.26),rgba(0,0,0,.6))}' +
+      '#svPrizeBoard .pb-m{font-size:calc(var(--u)*6.5);line-height:1}' +
+      '#svPrizeBoard .pb-r{font-size:calc(var(--u)*1.9);font-weight:900;letter-spacing:calc(var(--u)*.4);margin:calc(var(--u)*.3) 0}' +
+      '#svPrizeBoard .pb-p{font-size:calc(var(--u)*2.6);font-weight:900;color:#fff;line-height:1.15;word-break:break-word}' +
+      '#svPrizeBoard .r1 .pb-p{font-size:calc(var(--u)*3)}' +
+      '#svPrizeBoard .pb-more{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(var(--u)*.6)}' +
+      '#svPrizeBoard .pb-more span{font-size:calc(var(--u)*2);font-weight:800;color:var(--gold);border:1px solid var(--gold);border-radius:99px;padding:calc(var(--u)*.3) calc(var(--u)*1.4);background:rgba(255,193,7,.1)}';
+    document.head.appendChild(st);
+
+    if (!isStream) {
+      /* pill hadiah di jendela utama ikut berubah warna sesuai juara yang sedang tampil */
+      const txt = $('prizePillText'), pill = $('prizePill');
+      if (txt && pill) new MutationObserver(() => {
+        const m = /JUARA\s+(\d+)/.exec(txt.textContent || '');
+        pill.setAttribute('data-r', m ? m[1] : '1');
+      }).observe(txt, { childList: true, characterData: true, subtree: true });
+    } else {
+      /* ---- kotak J1 / J2 / J3 (target & hadiah per baris) jadi kartu berwarna ---- */
+      const tst = document.createElement('style');
+      tst.textContent =
+        '#svTargets{background:linear-gradient(180deg,rgba(255,193,7,.12),rgba(0,0,0,.62)) !important;border:calc(var(--u)*.35) solid var(--gold) !important;border-radius:calc(var(--u)*1.8) !important;gap:calc(var(--u)*.8) !important;padding:calc(var(--u)*1.2) !important;box-shadow:0 0 calc(var(--u)*2.5) rgba(255,193,7,.3)}' +
+        '#svTargets div{--c:var(--accent);position:relative;overflow:hidden;display:flex !important;align-items:center;gap:calc(var(--u)*1.3);font-size:calc(var(--u)*3.1) !important;color:#fff !important;padding:calc(var(--u)*.9) calc(var(--u)*1.4) !important;border-radius:calc(var(--u)*1.3) !important;border-left:calc(var(--u)*.8) solid var(--c) !important;background:linear-gradient(90deg,rgba(255,255,255,.12),rgba(255,255,255,.03)) !important}' +
+        '#svTargets div:nth-child(1){--c:#ffc107}#svTargets div:nth-child(2){--c:#c0c7d1}#svTargets div:nth-child(3){--c:#cd7f32}' +
+        '#svTargets div:nth-child(-n+3)::after{margin-left:auto;font-size:calc(var(--u)*4.2);flex:none}' +
+        '#svTargets div:nth-child(1)::after{content:"🥇"}#svTargets div:nth-child(2)::after{content:"🥈"}#svTargets div:nth-child(3)::after{content:"🥉"}' +
+        '#svTargets div:nth-child(1)::before{content:"";position:absolute;top:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:pzSheen 3.2s infinite}' +
+        '#svTargets div.on{box-shadow:0 0 calc(var(--u)*2.2) var(--c);background:linear-gradient(90deg,rgba(255,255,255,.26),rgba(255,255,255,.08)) !important}' +
+        '#svTargets .jn{flex:none;min-width:calc(var(--u)*6.5);text-align:center;font-weight:900;font-size:calc(var(--u)*2.4);padding:calc(var(--u)*.3) calc(var(--u)*1);border-radius:99px;background:var(--c);color:#000}' +
+        '#svTargets .jt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:900}';
+      document.head.appendChild(tst);
+      const t0 = setInterval(() => {
+        const tgt = $('svTargets'); if (!tgt) return;
+        clearInterval(t0);
+        const deco = () => {
+          let ch = false;
+          tgt.querySelectorAll('div').forEach(dv => {
+            if (dv.dataset.d) return; dv.dataset.d = '1';
+            const mm = /^J\s*(\d+)\s+(.*)$/i.exec(dv.textContent.trim());
+            if (mm) { dv.innerHTML = '<b class="jn">J' + mm[1] + '</b><span class="jt">' + esc(mm[2]) + '</span>'; ch = true; }
+          });
+          if (ch) window.dispatchEvent(new Event('resize'));
+        };
+        new MutationObserver(deco).observe(tgt, { childList: true }); deco();
+      }, 100);
+
+      let raw = null, key = '', board = null;
+      const iv = setInterval(() => {
+        const a = $('svPrize'); if (!a) return;
+        clearInterval(iv);
+        board = document.createElement('div'); board.id = 'svPrizeBoard'; a.insertAdjacentElement('afterend', board);
+        setInterval(render, 400); render();
+      }, 100);
+      function render() {
+        let r = null; try { r = localStorage.getItem(KEY); } catch (e) {}
+        if (r === raw) return; raw = r;
+        let pz = {}; try { pz = (JSON.parse(r) || {}).prizes || {}; } catch (e) {}
+        const items = (pz.items || []).filter(x => String(x || '').trim());
+        const k = JSON.stringify([items, pz.display]); if (k === key) return; key = k;
+        if (!items.length || pz.display === 'hidden') { board.style.display = 'none'; return; }
+        const med = ['🥇', '🥈', '🥉'], top = items.slice(0, 3);
+        const card = i => '<div class="pb-c r' + (i + 1) + '"><div class="pb-m">' + med[i] + '</div><div class="pb-r">JUARA ' + (i + 1) + '</div><div class="pb-p">' + esc(items[i]) + '</div></div>';
+        let order = top.map((_, i) => i);
+        if (top.length === 3) order = [1, 0, 2];            // podium: juara 2 - 1 - 3
+        const cols = top.length === 3 ? '1fr 1.18fr 1fr' : 'repeat(' + top.length + ',1fr)';
+        const more = items.slice(3, 8).map((p, j) => '<span>🏅 #' + (j + 4) + ' · ' + esc(p) + '</span>').join('');
+        board.innerHTML = '<div class="pb-h">🎁 HADIAH JUARA 🎁</div><div class="pb-top" style="grid-template-columns:' + cols + '">' + order.map(card).join('') + '</div>' + (more ? '<div class="pb-more">' + more + '</div>' : '');
+        board.style.display = 'flex';
+      }
+    }
   })();
   </script>
 </body>
