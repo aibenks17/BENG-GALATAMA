@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GALATAMA SYSTEM</title>
+  <title>GALATAMA SISTEM - BY BENG</title>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -1625,7 +1625,7 @@
   <!-- ===== ADD-ON: LOGIN & LISENSI ===== -->
   <div id="loginOverlay">
     <div class="login-card">
-      <div class="login-brand">GALATAMA <span>BY BENG BECKMAN</span></div>
+      <div class="login-brand">GALATAMA <span>NBY BENG</span></div>
 
       <!-- PANE AKTIVASI -->
       <div class="pane hidden" id="paneActivate">
@@ -3311,6 +3311,132 @@
       b.onclick = () => { try { localStorage.setItem(K, on() ? '0' : '1'); } catch (e) {} apply(); };
       apply();
     }, 100);
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: OPERATOR MINI (panel kontrol mengambang selalu di atas, untuk 1 monitor) ===== -->
+  <script>
+  (function () {
+    if (location.hash === '#stream') return;
+    const $ = id => document.getElementById(id), pad = n => String(n).padStart(2, '0');
+    const CSS = '*{box-sizing:border-box;font-family:system-ui,sans-serif}body{margin:0;background:#070b14;color:#f0f4f8;font-size:12px;display:flex;flex-direction:column;height:100vh;overflow:hidden}' +
+      'button{cursor:pointer;border:0;border-radius:6px;font-weight:800;color:#000;background:#00ffb2;padding:7px 10px;font-size:12px}button.g{background:#1b2438;color:#fff;border:1px solid #2c3a57}' +
+      '#tabs{display:flex;gap:4px;padding:5px;background:#0c1220}#tabs button{flex:1;background:#1b2438;color:#9fb0cf}#tabs button.on{background:#8a2be2;color:#fff}' +
+      '#vOp{flex:1;display:flex;flex-direction:column;min-height:0;padding:6px;gap:6px}#vSt{flex:1;min-height:0}#vSt iframe{border:0;width:100%;height:100%;display:block}' +
+      '.tr{display:flex;align-items:center;gap:6px}#opTime{flex:1;font:900 34px ui-monospace,monospace;color:#fff}#opTime.d{color:#ff0055}' +
+      '.inf{display:flex;align-items:center;gap:6px;color:#9fb0cf;font-weight:700}#opInfo{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#opSel{color:#00ffb2;font-weight:900;font-size:11px}' +
+      '#opPart{flex:1 1 38%;min-height:60px;overflow:auto;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start}' +
+      '#opPart button{display:flex;justify-content:space-between;gap:4px;text-align:left;background:#111a2c;color:#fff;border:1px solid #2c3a57;padding:6px}#opPart button.on{background:#00ffb2;color:#000}' +
+      '#opPart button.x{opacity:.4;text-decoration:line-through}#opPart span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
+      '#opCatch{flex:1 1 45%;min-height:80px;overflow:auto;display:flex;flex-direction:column;gap:6px}' +
+      '.bx{background:#111a2c;border:1px solid #2c3a57;border-radius:8px;padding:6px}.bx label{display:block;font-size:10px;color:#ffc107;font-weight:900;margin-bottom:3px}' +
+      '.bx select{width:100%;background:#000;color:#fff;border:1px solid #2c3a57;border-radius:5px;padding:6px;margin-bottom:4px}.bx button{width:100%;background:#ffc107}';
+    async function openOp() {
+      if (!('documentPictureInPicture' in window)) { alert('Browser belum mendukung jendela mini (butuh Chrome / Edge versi 116 ke atas).'); return; }
+      try {
+        if (documentPictureInPicture.window) { documentPictureInPicture.window.close(); await new Promise(r => setTimeout(r, 250)); }
+        const pip = await documentPictureInPicture.requestWindow({ width: 400, height: 700 }), d = pip.document, $p = id => d.getElementById(id);
+        const st = d.createElement('style'); st.textContent = CSS; d.head.appendChild(st);
+        d.body.innerHTML = '<div id="tabs"><button id="tOp" class="on">🎛 OPERATOR</button><button id="tSt">📺 STREAM</button></div>' +
+          '<div id="vOp"><div class="tr"><div id="opTime">00:00</div><button id="bS">▶ START</button><button id="bP" class="g">⏸</button><button id="bR" class="g">↺</button></div>' +
+          '<div class="inf"><span id="opInfo"></span><button id="bSp" class="g">🎰 SPIN</button><button id="bNr" class="g">⏭ ROUND</button></div>' +
+          '<div id="opSel">PILIH PESERTA</div><div id="opPart"></div><div id="opCatch"></div></div>' +
+          '<div id="vSt" style="display:none"></div>';
+        $p('bS').onclick = () => App.startTimer(); $p('bP').onclick = () => App.pauseTimer(); $p('bR').onclick = () => App.resetTimer();
+        $p('bSp').onclick = () => App.spinWheel(); $p('bNr').onclick = () => App.nextRound();
+        const tab = (on) => { $p('vOp').style.display = on ? 'flex' : 'none'; $p('vSt').style.display = on ? 'none' : 'block'; $p('tOp').className = on ? 'on' : ''; $p('tSt').className = on ? '' : 'on';
+          if (!on && !$p('vSt').firstChild) { const f = d.createElement('iframe'); f.src = location.href.split('#')[0] + '#stream'; $p('vSt').appendChild(f); } };
+        $p('tOp').onclick = () => tab(true); $p('tSt').onclick = () => tab(false);
+        let sigP = '', sigC = '';
+        const tick = () => {
+          const S = App.state, t = S.timer, sec = Math.max(0, t.secondsLeft || 0), tm = $p('opTime'); if (!tm) return;
+          tm.textContent = pad(Math.floor(sec / 60)) + ':' + pad(sec % 60); tm.className = (t.isRunning && sec <= 10) || sec === 0 ? 'd' : '';
+          $p('bS').textContent = t.isRunning ? '▶ JALAN' : '▶ START';
+          $p('opInfo').textContent = String(S.mode || '').replace(/_/g, ' ') + (S.mode === 'POINT_RUSH' ? ' · ' + S.pointRushLocation : (S.mode === 'SURVIVAL' ? ' · ROUND ' + S.survival.round : ''));
+          $p('bSp').style.display = S.mode === 'POINT_RUSH' ? '' : 'none'; $p('bNr').style.display = S.mode === 'SURVIVAL' ? '' : 'none';
+          const ps = [...S.participants].sort((a, b) => b.totalScore - a.totalScore), sp = JSON.stringify([ps.map(p => [p.id, p.name, p.totalScore, p.status, p.present]), S.selectedId]);
+          if (sp !== sigP) {
+            sigP = sp; const box = $p('opPart'); box.innerHTML = '';
+            ps.forEach((p, i) => { const b = d.createElement('button'); b.className = (p.id === S.selectedId ? 'on ' : '') + (p.status !== 'ACTIVE' ? 'x' : '');
+              b.innerHTML = '<span></span><b></b>'; b.firstChild.textContent = (i + 1) + '. ' + p.name; b.lastChild.textContent = p.totalScore; b.onclick = () => App.selectParticipant(p.id, p.name); box.appendChild(b); });
+            const me = S.participants.find(p => p.id === S.selectedId); $p('opSel').textContent = me ? 'TERPILIH: ' + me.name.toUpperCase() + ' (' + me.totalScore + ' pts)' : 'PILIH PESERTA';
+          }
+          const w = $('dropdownWrapper'), sc = w ? w.innerHTML : '';
+          if (sc !== sigC) {
+            sigC = sc; const cb = $p('opCatch'); cb.innerHTML = '';
+            const bxs = w ? w.querySelectorAll('.dropdown-box') : [];
+            if (!bxs.length) { const m = d.createElement('div'); m.style.cssText = 'color:#ff0055;font-weight:800;text-align:center;padding:10px'; m.textContent = (w && w.textContent.trim().replace(/\s+/g, ' ')) || ''; cb.appendChild(m); }
+            bxs.forEach((bx, i) => {
+              const el = d.createElement('div'); el.className = 'bx'; const lb = d.createElement('label'); lb.textContent = (bx.querySelector('label') || {}).textContent || '';
+              const sel = d.createElement('select'); Array.from(bx.querySelector('select').options).forEach(o => { const op = d.createElement('option'); op.textContent = o.textContent; sel.appendChild(op); });
+              const btn = d.createElement('button'); btn.textContent = (bx.querySelector('button') || {}).textContent || 'Kirim';
+              btn.onclick = () => { const cur = $('dropdownWrapper').querySelectorAll('.dropdown-box')[i]; if (!cur) return; cur.querySelector('select').selectedIndex = sel.selectedIndex; cur.querySelector('button').click(); };
+              el.append(lb, sel, btn); cb.appendChild(el);
+            });
+          }
+        };
+        const iv = setInterval(tick, 400); pip.addEventListener('pagehide', () => clearInterval(iv)); tick();
+      } catch (e) { alert('Gagal membuka operator mini: ' + e.message); }
+    }
+    const ref = Array.from(document.querySelectorAll('header button')).find(b => b.textContent.indexOf('STREAM MINI') >= 0) || Array.from(document.querySelectorAll('header button')).find(b => b.textContent.indexOf('STREAM') >= 0);
+    if (ref) {
+      const b = document.createElement('button'); b.className = 'btn btn-gold btn-sm'; b.textContent = '🎛 OPERATOR MINI';
+      b.title = 'Panel kontrol mengambang selalu di atas (timer, peserta, input tangkapan, tab Stream) — cocok untuk 1 monitor';
+      b.onclick = openOp; ref.insertAdjacentElement('afterend', b);
+    }
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: TABEL POIN DI LAYAR STREAM (poin basic + varian untuk lokasi / mode aktif) ===== -->
+  <script>
+  (function () {
+    if (location.hash !== '#stream') return;
+    const KEY = 'GALATAMA_V6_HORIZONTAL', PK = 'GALATAMA_STREAM_POINTS', $ = id => document.getElementById(id);
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const lg = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const st = document.createElement('style');
+    st.textContent =
+      '#svPoints{flex-shrink:0;display:none;flex-direction:column;gap:calc(var(--u)*.5);background:rgba(0,0,0,.62);border:1px solid var(--accent);border-radius:calc(var(--u)*1.4);padding:calc(var(--u)*.9) calc(var(--u)*1.3)}' +
+      '#svPoints .ph{font-size:calc(var(--u)*1.7);font-weight:900;letter-spacing:calc(var(--u)*.3);color:var(--accent);text-transform:uppercase}' +
+      '#svPoints .pr{display:flex;flex-wrap:wrap;align-items:baseline;gap:calc(var(--u)*.3) calc(var(--u)*.9);line-height:1.2}' +
+      '#svPoints .pn{font-size:calc(var(--u)*2.1);font-weight:900;color:#fff}' +
+      '#svPoints .pb{font-size:calc(var(--u)*2.1);font-weight:900;color:#000;background:var(--gold);border-radius:99px;padding:0 calc(var(--u)*.9)}' +
+      '#svPoints .pv{font-size:calc(var(--u)*1.7);font-weight:700;color:#cfd8ea}#svPoints .pv b{color:var(--gold)}';
+    document.head.appendChild(st);
+    const parse = s => String(s).split(' | ').map(x => { const m = /^(.*) \(\+(\d+)\)$/.exec(x); return m ? { n: m[1], p: +m[2] } : null; }).filter(Boolean);
+    function rows(mode, loc) {
+      let r = []; try { r = GalatamaInjector.cek(mode === 'POINT_RUSH' ? loc : '', mode); } catch (e) {}
+      return r.map(b => {
+        const t = parse(b.tingkat); if (!t.length) return null;
+        const P = t[0].n.replace(/ Basic$/, '');
+        return { h: P, b: t[0].p, v: t.slice(1).map(x => ({ n: x.n.indexOf(P + ' ') === 0 ? x.n.slice(P.length + 1) : x.n, p: x.p })) };
+      }).filter(Boolean);
+    }
+    let raw = null, sig = '', box, view;
+    const iv = setInterval(() => {
+      view = $('streamView'); const tools = view && view.querySelector('.sv-tools'), tg = $('svTargets');
+      if (!tools || !tg) return; clearInterval(iv);
+      box = document.createElement('div'); box.id = 'svPoints'; tg.insertAdjacentElement('afterend', box);
+      const b = document.createElement('button'); tools.appendChild(b);
+      const on = () => lg(PK) !== '0';
+      const apply = () => { b.textContent = '📋 POIN: ' + (on() ? 'ON' : 'OFF'); sig = ''; draw(); };
+      b.onclick = () => { try { localStorage.setItem(PK, on() ? '0' : '1'); } catch (e) {} apply(); };
+      apply(); setInterval(draw, 500);
+    }, 100);
+    function draw() {
+      const on = lg(PK) !== '0', r = lg(KEY), z = r + '|' + on;
+      if (z === raw && sig) return; raw = z;
+      let d = {}; try { d = JSON.parse(r) || {}; } catch (e) {}
+      const data = on ? rows(d.mode, d.pointRushLocation) : [], k = JSON.stringify([d.mode, d.pointRushLocation, data]);
+      if (k === sig) return; sig = k;
+      if (!data.length) { box.style.display = 'none'; window.dispatchEvent(new Event('resize')); return; }
+      const title = '📋 POIN · ' + (d.mode === 'POINT_RUSH' ? d.pointRushLocation : String(d.mode || '').replace(/_/g, ' '));
+      box.innerHTML = '<div class="ph">' + esc(title) + '</div>' + data.map(x =>
+        '<div class="pr"><span class="pn">' + esc(x.h) + '</span><span class="pb">BASIC +' + x.b + '</span>' +
+        (x.v.length ? '<span class="pv">' + x.v.map(y => esc(y.n) + ' <b>+' + y.p + '</b>').join(' · ') + '</span>' : '') + '</div>').join('');
+      box.style.display = 'flex'; window.dispatchEvent(new Event('resize'));
+    }
   })();
   </script>
 </body>
