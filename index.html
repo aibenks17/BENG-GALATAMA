@@ -2374,7 +2374,7 @@
   })();
   </script>
 
-  <!-- ===== ADD-ON: LELANG SLOT (BID / BIN + BONUS POIN AWAL) ===== -->
+  <!-- ===== ADD-ON: LELE SLOT (BID / BIN + BONUS POIN AWAL) ===== -->
   <style id="auctionStyle">
     #auctionModal .modal-card { width: min(760px, 96vw); max-height: 92vh; overflow-y: auto; }
     .auc-row { display: grid; grid-template-columns: 20px minmax(0,1fr) 92px 44px minmax(0,1.3fr) 64px; gap: 6px; padding: 4px 8px; border-bottom: 1px dashed rgba(255,255,255,0.08); font-size: 9px; align-items: center; }
@@ -2399,7 +2399,7 @@
   <div class="modal-overlay hidden" id="auctionModal">
     <div class="modal-card">
       <div class="card-title">
-        <span>🔨 LELANG SLOT & INFO LAYAR STREAM</span>
+        <span>🔨 LELE SLOT & INFO LAYAR STREAM</span>
         <button class="btn btn-pink btn-sm" onclick="Auction.close()">X</button>
       </div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
@@ -2425,7 +2425,7 @@
           <code>siti.tt, 300, Siti Roblox</code> → BID biasa, tanpa bonus<br>
           Bonus juga bisa ditulis di kolom nilai: <code>rani, BIN 1000 +2, Rani R</code>. Pemisah: koma, <code>|</code>, <code>;</code> atau tab (tempel dari Excel). Username Roblox opsional di dalam kurung. <b>Ctrl+Enter</b> = masukkan cepat.
         </div>
-        <textarea id="aucInput" class="input-field" placeholder="Tempel hasil lelang di sini..." oninput="Auction.preview()"></textarea>
+        <textarea id="aucInput" class="input-field" placeholder="Tempel hasil lele di sini..." oninput="Auction.preview()"></textarea>
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
           <label style="color:var(--lime); font-weight:800;">TIPE:</label>
           <select id="aucType" class="input-field" style="width:110px;"><option value="FIXED">FIXED</option><option value="RANDOM">RANDOM</option></select>
@@ -2437,7 +2437,7 @@
 
         <div style="border-top:1px dashed var(--border-lime); padding-top:10px; display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label style="color:var(--lime); font-weight:800;">📋 CATATAN LELANG</label>
+            <label style="color:var(--lime); font-weight:800;">📋 CATATAN LELE</label>
             <span class="auc-sum" id="aucSummary"></span>
           </div>
           <div class="bulk-preview" id="aucRecords" style="max-height:170px;"></div>
@@ -2454,7 +2454,7 @@
     const cleanName = (s) => String(s || '').replace(/'/g, '’').replace(/[<>"`\\]/g, '').replace(/\s+/g, ' ').trim();
     const U = '[A-Za-z0-9_.]+';
 
-    /* Muat data lelang dari penyimpanan (loadStorage bawaan hanya memuat kunci tertentu) */
+    /* Muat data lele dari penyimpanan (loadStorage bawaan hanya memuat kunci tertentu) */
     try {
       const saved = JSON.parse(localStorage.getItem('GALATAMA_V6_HORIZONTAL') || 'null');
       if (saved && saved.auction) App.state.auction = saved.auction;
@@ -2521,7 +2521,7 @@
             '<span class="auc-bonus">' + (e.bonus ? '+' + e.bonus : '—') + '</span>' +
             '<span class="c">' + esc(e.name) + (e.username ? '<i>@' + esc(e.username) + '</i>' : '') + '</span>' +
             '<button class="btn btn-dark btn-sm" style="padding:1px 6px;" title="Hapus catatan (peserta tidak ikut terhapus)" onclick="Auction.delRecord(' + i + ')">✕</button></div>').join('')
-        : '<div style="padding:10px; color:var(--text-muted); text-align:center;">Belum ada catatan lelang.</div>';
+        : '<div style="padding:10px; color:var(--text-muted); text-align:center;">Belum ada catatan lele.</div>';
     }
 
     const Auction = {
@@ -2567,7 +2567,7 @@
             auction: { type: r.type, amount: r.amount, bonus: r.bonus || 0 }
           };
           if (r.bonus > 0) {
-            const logId = 'log_bin_' + stamp + '_' + i, label = '[LELANG ' + r.type + '] Bonus poin awal';
+            const logId = 'log_bin_' + stamp + '_' + i, label = '[LELE ' + r.type + '] Bonus poin awal';
             p.historyLog.push({ id: logId, result: label, points: r.bonus, mode: st.mode });
             st.history.unshift({
               id: logId, participantId: pid, time: timeStr, participantName: p.name, participantAvatar: p.avatar,
@@ -2584,7 +2584,7 @@
 
       delRecord(i) {
         const e = A().entries[i]; if (!e) return;
-        if (!confirm('Hapus catatan lelang "' + e.name + '"?\n(Peserta dan poinnya tidak ikut terhapus.)')) return;
+        if (!confirm('Hapus catatan lele "' + e.name + '"?\n(Peserta dan poinnya tidak ikut terhapus.)')) return;
         A().entries.splice(i, 1); App.saveStorage(); renderRecords();
       }
     };
@@ -2610,11 +2610,11 @@
     if (anchor) {
       const b = document.createElement('button');
       b.className = 'btn btn-purple btn-sm'; b.style.cssText = 'width:100%; margin-bottom:6px;';
-      b.textContent = '🔨 LELANG SLOT (BID / BIN)'; b.onclick = () => Auction.open();
+      b.textContent = '🔨 LELE SLOT (BID / BIN)'; b.onclick = () => Auction.open();
       anchor.insertAdjacentElement(bulkBtn ? 'afterend' : 'beforebegin', b);
     }
 
-    /* ---------- Info lelang di detail peserta ---------- */
+    /* ---------- Info lele di detail peserta ---------- */
     const origDetail = App.showPlayerDetail;
     App.showPlayerDetail = function (id) {
       origDetail.apply(this, arguments);
@@ -2731,6 +2731,23 @@
           if (!win) alert('Pop-up diblokir browser. Izinkan pop-up untuk halaman ini, lalu klik lagi.');
         };
         setBtn.insertAdjacentElement('beforebegin', b);
+        // jendela mini selalu-di-atas (Document Picture-in-Picture) — cocok untuk 1 monitor
+        const b2 = document.createElement('button');
+        b2.className = 'btn btn-purple btn-sm'; b2.textContent = '📌 STREAM MINI';
+        b2.title = 'Jendela Stream mengambang, selalu di atas aplikasi lain (untuk 1 monitor). Klik lagi untuk menutup.';
+        b2.onclick = async () => {
+          if (!('documentPictureInPicture' in window)) { alert('Browser belum mendukung jendela mini (butuh Chrome / Edge versi 116 ke atas). Pakai tombol 📱 STREAM biasa.'); return; }
+          try {
+            if (documentPictureInPicture.window) { documentPictureInPicture.window.close(); return; }
+            const pip = await documentPictureInPicture.requestWindow({ width: 360, height: 640 });
+            pip.document.body.style.cssText = 'margin:0;background:#000;overflow:hidden';
+            const fr = pip.document.createElement('iframe');
+            fr.src = location.href.split('#')[0] + '#stream';
+            fr.style.cssText = 'border:0;width:100vw;height:100vh;display:block';
+            pip.document.body.appendChild(fr);
+          } catch (e) { alert('Gagal membuka jendela mini: ' + e.message); }
+        };
+        b.insertAdjacentElement('afterend', b2);
       }
       // pastikan data selalu tersimpan setelah perubahan (jendela stream membaca dari penyimpanan)
       const origAll = App.renderAll;
@@ -2809,7 +2826,7 @@
       else if (d.mode === 'POINT_RUSH' && d.pointRushLocation) m += ' · ' + d.pointRushLocation;
       $('svMode').textContent = m;
 
-      // info lelang: OB / NB / BIN (+bonus) / slot terisi
+      // info lele: OB / NB / BIN (+bonus) / slot terisi
       const bonus = A.defaultBonus || 0, ents = A.entries || [], pills = [];
       if (has(S.ob)) pills.push('<span>OB : ' + esc(S.ob) + '</span>');
       if (has(S.nb)) pills.push('<span>NB : ' + esc(S.nb) + '</span>');
@@ -2947,7 +2964,7 @@
   })();
   </script>
 
-  <!-- ===== ADD-ON: TIMER LELANG (set di menu Lelang, tampil di layar Stream) ===== -->
+  <!-- ===== ADD-ON: TIMER LELE (set di menu Lele, tampil di layar Stream) ===== -->
   <script>
   (function () {
     const KEY = 'GALATAMA_V6_HORIZONTAL', isStream = location.hash === '#stream';
@@ -2964,11 +2981,15 @@
       '#svAucTimer .tm{font-family:var(--font-mono);font-size:calc(var(--u)*11);font-weight:900;color:#fff;line-height:1.05}' +
       '#svAucTimer.danger{border-color:var(--pink)}#svAucTimer.danger .tm{color:var(--pink);animation:aucPulse .4s infinite alternate}' +
       '#svAucTimer.done{border-color:var(--pink)}#svAucTimer.done .tm{color:var(--pink);font-size:calc(var(--u)*7)}' +
-      '#svAucGiant{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:7;font-family:var(--font-mono);font-weight:900;color:var(--gold);font-size:calc(var(--u)*46);text-shadow:0 0 50px var(--gold),0 0 100px rgba(255,170,0,.8);animation:aucPulse .4s infinite alternate}';
+      '#svAucGiant{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none;z-index:7;font-family:var(--font-mono);font-weight:900;color:var(--gold);font-size:calc(var(--u)*46);text-shadow:0 0 50px var(--gold),0 0 100px rgba(255,170,0,.8);animation:aucPulse .4s infinite alternate}' +
+      '#svAucTimer .ai{display:flex;flex-wrap:wrap;justify-content:center;gap:calc(var(--u)*.7);margin-top:calc(var(--u)*.9)}' +
+      '#svAucTimer .ai span{font-size:calc(var(--u)*2.6);font-weight:900;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.35);border-radius:99px;padding:calc(var(--u)*.3) calc(var(--u)*1.4)}' +
+      '#svAucTimer .ai span.bin{color:#000;background:var(--gold);border-color:var(--gold)}' +
+      '#streamView.aucon #svAuc{display:none !important}';
     document.head.appendChild(st);
 
     if (!isStream) {
-      /* ---------------- JENDELA UTAMA: kontrol di menu Lelang ---------------- */
+      /* ---------------- JENDELA UTAMA: kontrol di menu Lele ---------------- */
       const A = () => App.state.auction || (App.state.auction = { defaultBonus: 2, entries: [] });
       const T = () => A().timer || (A().timer = { label: '', dur: 60, left: 60, running: false, endsAt: 0, done: false });
       const save = () => { try { App.saveStorage(); } catch (e) {} paint(); };
@@ -2976,7 +2997,7 @@
         setDur(sec) { const t = T(); t.dur = Math.max(1, sec | 0); if (!t.running) { t.left = t.dur; t.done = false; } save(); },
         start() { const t = T(); if (t.running) return; let l = left(t); if (l <= 0) l = t.dur; t.left = l; t.endsAt = Date.now() + l * 1000; t.running = true; t.done = false; save(); },
         pause() { const t = T(); if (!t.running) return; t.left = left(t); t.running = false; save(); },
-        reset() { const t = T(); t.running = false; t.left = t.dur; t.done = false; save(); },
+        reset() { const t = T(); t.running = false; t.left = t.dur; t.done = false; const S = A().session; if (S) { S.ob = ''; S.nb = ''; S.bin = ''; } ['aucOB', 'aucNB', 'aucBIN'].forEach(id => { const e = $(id); if (e) e.value = ''; }); save(); },
         add(sec) { const t = T(); if (t.running) t.endsAt += sec * 1000; else t.left = Math.max(0, left(t) + sec); if (left(t) > 0) t.done = false; save(); },
         fromInputs() { AT.setDur((parseInt($('aucTMin').value, 10) || 0) * 60 + (parseInt($('aucTSec').value, 10) || 0)); },
         label(v) { T().label = v.trim(); try { App.saveStorage(); } catch (e) {} }
@@ -2986,9 +3007,9 @@
         const box = document.createElement('div');
         box.style.cssText = 'flex:1 1 100%; padding:8px; border:1px solid var(--gold); border-radius:6px; background:rgba(0,0,0,.35);';
         box.innerHTML =
-          '<label style="font-size:8px; color:var(--gold); font-weight:900;">⏱ TIMER LELANG (TAMPIL BESAR DI LAYAR STREAM)</label>' +
+          '<label style="font-size:8px; color:var(--gold); font-weight:900;">⏱ TIMER LELE (TAMPIL BESAR DI LAYAR STREAM)</label>' +
           '<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:flex-end; margin:6px 0;">' +
-            '<div style="flex:2 1 150px;"><label style="font-size:8px; color:var(--text-muted);">JUDUL (opsional)</label><input type="text" id="aucTLabel" class="input-field" placeholder="LELANG KURSI #1" oninput="AucTimer.label(this.value)"></div>' +
+            '<div style="flex:2 1 150px;"><label style="font-size:8px; color:var(--text-muted);">JUDUL (opsional)</label><input type="text" id="aucTLabel" class="input-field" placeholder="LELE KURSI #1" oninput="AucTimer.label(this.value)"></div>' +
             '<div style="flex:0 1 60px;"><label style="font-size:8px; color:var(--text-muted);">MENIT</label><input type="number" id="aucTMin" class="input-field" min="0" max="99" onchange="AucTimer.fromInputs()"></div>' +
             '<div style="flex:0 1 60px;"><label style="font-size:8px; color:var(--text-muted);">DETIK</label><input type="number" id="aucTSec" class="input-field" min="0" max="59" onchange="AucTimer.fromInputs()"></div>' +
           '</div>' +
@@ -3016,7 +3037,7 @@
         const show = t.running || t.done || (l > 0 && l < t.dur);
         pill.style.display = show ? 'block' : 'none';
         pill.className = d || t.done ? 'danger' : '';
-        pill.textContent = t.done ? '⏱ LELANG DITUTUP' : '⏱ ' + (t.label || 'LELANG') + ' ' + fmt(l);
+        pill.textContent = t.done ? '⏱ LELE DITUTUP' : '⏱ ' + (t.label || 'LELE') + ' ' + fmt(l);
       }
       setInterval(() => {
         const t = T();
@@ -3032,8 +3053,8 @@
       if (openOrig) Auction.open = function () { const r = openOrig.apply(this, arguments); AT.sync(); return r; };
       AT.sync();
     } else {
-      /* ---------------- JENDELA STREAM: tampilkan timer lelang ---------------- */
-      let tm = null, raw = null, el, giant;
+      /* ---------------- JENDELA STREAM: tampilkan timer lele ---------------- */
+      let tm = null, raw = null, el, giant, ses = {}, bonus = 0, nEnt = 0, nPart = 0;
       const iv = setInterval(() => {
         const anchor = $('svAuc'), view = $('streamView');
         if (!anchor || !view) return;
@@ -3042,16 +3063,26 @@
         giant = document.createElement('div'); giant.id = 'svAucGiant'; view.appendChild(giant);
         setInterval(render, 250);
       }, 100);
+      function info() {
+        const c = [], h = v => v != null && String(v).trim() !== '';
+        const v = x => h(x) ? esc(x) : '-';
+        c.push('<span>OB : ' + v(ses.ob) + '</span>');
+        c.push('<span>NB : ' + v(ses.nb) + '</span>');
+        c.push('<span class="bin">BIN : ' + v(ses.bin) + (bonus > 0 ? ' · +' + esc(bonus) + ' POIN' : '') + '</span>');
+        if (nEnt) c.push('<span>SLOT ' + nPart + ' / ' + esc(ses.slots || 20) + '</span>');
+        return c.length ? '<div class="ai">' + c.join('') + '</div>' : '';
+      }
       function render() {
         let r = null; try { r = localStorage.getItem(KEY); } catch (e) {}
-        if (r !== raw) { raw = r; try { const d = JSON.parse(r); tm = d && d.auction && d.auction.timer || null; } catch (e) { tm = null; } }
+        if (r !== raw) { raw = r; try { const d = JSON.parse(r) || {}, A = d.auction || {}; tm = A.timer || null; ses = A.session || {}; bonus = A.defaultBonus || 0; nEnt = (A.entries || []).length; nPart = (d.participants || []).length; } catch (e) { tm = null; ses = {}; } }
         const l = left(tm), run = !!(tm && tm.running), done = !!(tm && tm.done);
         const show = tm && (run || done || (l > 0 && l < tm.dur));
         el.style.display = show ? 'block' : 'none';
+        const sv = $('streamView'); if (sv) sv.classList.toggle('aucon', !!show);
         if (!show) { giant.style.display = 'none'; return; }
         const danger = run && l <= 10 && l > 0;
         el.className = done ? 'done' : (danger ? 'danger' : '');
-        el.innerHTML = '<div class="lb">⏱ ' + esc(tm.label || 'LELANG') + (!run && !done ? ' · PAUSE' : '') + '</div><div class="tm">' + (done ? 'LELANG DITUTUP' : fmt(l)) + '</div>';
+        el.innerHTML = '<div class="lb">⏱ ' + esc(tm.label || 'LELE') + (!run && !done ? ' · PAUSE' : '') + '</div><div class="tm">' + (done ? 'LELE DITUTUP' : fmt(l)) + '</div>' + info();
         giant.style.display = danger ? 'flex' : 'none'; giant.textContent = l;
       }
     }
@@ -3154,6 +3185,132 @@
         board.style.display = 'flex';
       }
     }
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: LAYOUT LANDSCAPE STREAM (daftar peserta 2 kolom di bawah, bar timer + jam di atas) ===== -->
+  <script>
+  (function () {
+    if (location.hash !== '#stream') return;
+    const KEY = 'GALATAMA_V6_HORIZONTAL', LK = 'GALATAMA_STREAM_LAYOUT', TK = 'GALATAMA_STREAM_TARGETS', CK = 'GALATAMA_STREAM_COLS', PK = 'GALATAMA_STREAM_PREVCOLS';
+    const $ = id => document.getElementById(id), pad = n => String(n).padStart(2, '0');
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const has = v => v != null && String(v).trim() !== '';
+    const lg = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    const ls = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+    const left = t => !t ? 0 : (t.running ? Math.max(0, Math.ceil((t.endsAt - Date.now()) / 1000)) : Math.max(0, t.left != null ? t.left : (t.dur || 0)));
+    const st = document.createElement('style');
+    st.textContent =
+      '#svLandBar{display:none}' +
+      '#streamView.land>*:not(.sv-tools):not(#svList):not(#svLandBar):not(#svWin):not(#svAucGiant){display:none !important}' +
+      '#streamView.land{padding:calc(var(--u)*1.2) calc(var(--u)*1.5) !important;gap:calc(var(--u)*1.2)}' +
+      '#streamView.land #svLandBar{display:flex;align-items:center;justify-content:space-between;gap:calc(var(--u)*1.5);flex-shrink:0;padding:calc(var(--u)*.9) calc(var(--u)*1.5);background:rgba(12,18,32,.82);border:1px solid var(--border-lime);border-radius:calc(var(--u)*1.2)}' +
+      '#streamView.land #svList{flex:none;height:46vh;margin-top:auto}' +
+      '@media (min-aspect-ratio:11/5){#streamView.land #svList{flex:1;height:auto;margin-top:0}}' +
+      '#svLandBar .lleft{min-width:0;display:flex;flex-direction:column;gap:calc(var(--u)*.6)}' +
+      '#svLandBar .lst{font-size:calc(var(--u)*2.6);font-weight:900;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      '#svLandBar .lch{display:flex;flex-wrap:wrap;gap:calc(var(--u)*.5)}' +
+      '#svLandBar .lch span{font-size:calc(var(--u)*1.4);font-weight:900;color:#fff;background:rgba(0,0,0,.6);border:1px solid var(--c,var(--accent));border-radius:99px;padding:calc(var(--u)*.2) calc(var(--u)*1)}' +
+      '#svLandBar .lch span.bin{color:var(--gold);border-color:var(--gold)}' +
+      '#svLandBar .lright{flex:none;display:flex;align-items:center;gap:calc(var(--u)*1.2)}' +
+      '#svLandBar .sv-timer{font-size:calc(var(--u)*6) !important}' +
+      '#svLandBar .lclk{font-family:var(--font-mono);font-weight:900;font-size:calc(var(--u)*2);color:#fff;background:rgba(0,0,0,.6);border:1px solid var(--accent);border-radius:99px;padding:calc(var(--u)*.4) calc(var(--u)*1.2);white-space:nowrap}' +
+      '#svLandBar .lauc{display:none;font-weight:900;font-size:calc(var(--u)*1.8);color:var(--gold);background:rgba(0,0,0,.7);border:2px solid var(--gold);border-radius:calc(var(--u)*1);padding:calc(var(--u)*.4) calc(var(--u)*1.2);white-space:nowrap}' +
+      '#svLandBar .lauc.danger{color:var(--pink);border-color:var(--pink)}';
+    document.head.appendChild(st);
+
+    let view, bar, raw = null, sig = '', d = {};
+    // paksa jumlah kolom daftar peserta lewat tombol KOLOM asli (supaya daftar langsung digambar ulang)
+    function setCols(target) {
+      const btn = $('svCols'); if (!btn) return;
+      const inv = { auto: '2', '1': 'auto', '2': '1' }, cur = lg(CK) || 'auto';
+      if (cur === target) return;
+      ls(CK, inv[target]); btn.click();
+    }
+    const iv = setInterval(() => {
+      view = $('streamView'); const tools = view && view.querySelector('.sv-tools'), list = $('svList');
+      if (!tools || !list) return; clearInterval(iv);
+      bar = document.createElement('div'); bar.id = 'svLandBar';
+      bar.innerHTML = '<div class="lleft"><div class="lst" id="lTitle"></div><div class="lch" id="lChips"></div></div><div class="lright"><div class="lauc" id="lAuc"></div><div class="lclk" id="lClock"></div><div class="sv-timer" id="lTime">00:00</div></div>';
+      view.insertBefore(bar, list);
+      const b = document.createElement('button'); b.id = 'svLay'; tools.appendChild(b);
+      const on = () => lg(LK) === 'L';
+      const apply = (changed) => {
+        view.classList.toggle('land', on()); b.textContent = '🖥 LAYOUT: ' + (on() ? 'LANDSCAPE' : 'PORTRAIT'); sig = '';
+        if (on()) { if (changed && (lg(CK) || 'auto') !== '2') ls(PK, lg(CK) || 'auto'); setCols('2'); }
+        else if (changed) setCols(lg(PK) || 'auto');
+        draw();
+      };
+      b.onclick = () => { ls(LK, on() ? 'P' : 'L'); apply(true); };
+      apply(false); setInterval(draw, 400); setInterval(tick, 250);
+    }, 100);
+
+    function build() {
+      const A = d.auction || {}, S = A.session || {}, n = (d.participants || []).filter(p => p.present !== false).length;
+      $('lTitle').textContent = S.title || d.clientName || 'OFFICIAL STORE';
+      let m = String(d.mode || '').replace(/_/g, ' ');
+      if (d.mode === 'SURVIVAL') m += ' · ROUND ' + ((d.survival && d.survival.round) || 1) + ' / 5';
+      else if (d.mode === 'POINT_RUSH' && d.pointRushLocation) m += ' · ' + d.pointRushLocation;
+      const bonus = A.defaultBonus || 0, chips = ['<span>' + esc(m) + '</span>'];
+      if (has(S.map)) chips.push('<span>🗺️ ' + esc(S.map) + '</span>');
+      if (has(S.ob)) chips.push('<span>OB : ' + esc(S.ob) + '</span>');
+      if (has(S.nb)) chips.push('<span>NB : ' + esc(S.nb) + '</span>');
+      if (has(S.bin)) chips.push('<span class="bin">BIN : ' + esc(S.bin) + (bonus > 0 ? ' (+' + esc(bonus) + ' Pts)' : '') + '</span>');
+      if ((A.entries || []).length) chips.push('<span>SLOT ' + n + ' / ' + esc(S.slots || 20) + '</span>');
+      const active = d.mode === 'SURVIVAL' ? ((d.survival && d.survival.round) || 1) - 1 : -1, C = ['#ffc107', '#c0c7d1', '#cd7f32'];
+      (lg(TK) === '0' ? [] : String(S.targets || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean)).forEach((l, i) => {
+        const mm = /^j\s*(\d+)\s+(.*)$/i.exec(l);
+        chips.push('<span style="--c:' + (C[i] || 'var(--accent)') + (i === active ? ';background:rgba(255,255,255,.25)' : '') + '">J' + (mm ? mm[1] : i + 1) + ' ' + esc(mm ? mm[2] : l) + '</span>');
+      });
+      const pz = d.prizes || {}, items = (pz.items || []).filter(has), med = ['🥇', '🥈', '🥉'];
+      if (items.length && pz.display !== 'hidden') chips.push('<span class="bin">🎁 ' + items.slice(0, 4).map((x, i) => (med[i] || '🏅') + ' ' + esc(x)).join(' ') + '</span>');
+      $('lChips').innerHTML = chips.join('');
+      tick();
+    }
+    function draw() {
+      if (!view || !view.classList.contains('land')) return;
+      const r = lg(KEY), t = lg(TK), z = r + '|' + t;
+      if (z === raw && sig) return; raw = z;
+      try { d = JSON.parse(r) || {}; } catch (e) { d = {}; }
+      const k = JSON.stringify([(d.participants || []).length, d.mode, d.survival, d.pointRushLocation, d.clientName, d.prizes, ((d.auction || {}).session), ((d.auction || {}).defaultBonus), ((d.auction || {}).entries || []).length, t]);
+      if (k !== sig) { sig = k; build(); }
+    }
+    function tick() {
+      const tm = $('lTime'); if (!tm) return;
+      const t = d.timer || {}, sec = Math.max(0, t.secondsLeft || 0);
+      tm.textContent = pad(Math.floor(sec / 60)) + ':' + pad(sec % 60);
+      tm.classList.toggle('danger', sec === 0 || (!!t.isRunning && sec <= 10));
+      const n = new Date(); $('lClock').textContent = '🕒 ' + pad(n.getHours()) + ':' + pad(n.getMinutes()) + ':' + pad(n.getSeconds());
+      const at = (d.auction || {}).timer, l = left(at), run = !!(at && at.running), done = !!(at && at.done), a = $('lAuc');
+      const show = at && (run || done || (l > 0 && l < at.dur));
+      a.style.display = show ? 'block' : 'none';
+      if (show) { a.classList.toggle('danger', done || (run && l <= 10)); a.textContent = '⏱ ' + (at.label || 'LELE') + ' ' + (done ? 'DITUTUP' : pad(Math.floor(l / 60)) + ':' + pad(l % 60)); }
+    }
+  })();
+  </script>
+
+  <!-- ===== ADD-ON: MODE RAPAT (sesi, timer, target lebih dekat ke daftar peserta, tampilan portrait) ===== -->
+  <script>
+  (function () {
+    if (location.hash !== '#stream') return;
+    const K = 'GALATAMA_STREAM_TIGHT', $ = id => document.getElementById(id);
+    const lg = () => { try { return localStorage.getItem(K); } catch (e) { return null; } };
+    const st = document.createElement('style');
+    st.textContent =
+      '#streamView.tight:not(.land){gap:calc(var(--u)*.45)}' +
+      '#streamView.tight:not(.land) .sv-head{gap:calc(var(--u)*.25)}' +
+      '#streamView.tight:not(.land) .sv-targets{padding:calc(var(--u)*.5) calc(var(--u)*1.2);gap:calc(var(--u)*.2)}' +
+      '#streamView.tight:not(.land) .sv-targets div{padding-top:0;padding-bottom:0}';
+    document.head.appendChild(st);
+    const iv = setInterval(() => {
+      const v = $('streamView'), tools = v && v.querySelector('.sv-tools');
+      if (!tools) return; clearInterval(iv);
+      const b = document.createElement('button'); tools.appendChild(b);
+      const on = () => lg() !== '0';
+      const apply = () => { v.classList.toggle('tight', on()); b.textContent = '↕ RAPAT: ' + (on() ? 'ON' : 'OFF'); window.dispatchEvent(new Event('resize')); };
+      b.onclick = () => { try { localStorage.setItem(K, on() ? '0' : '1'); } catch (e) {} apply(); };
+      apply();
+    }, 100);
   })();
   </script>
 </body>
